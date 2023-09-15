@@ -1,0 +1,662 @@
+package com.ceraphi.controller.Calculation;
+
+import com.ceraphi.entities.Calculation;
+import com.ceraphi.services.Impl.WellDataCalculationImpl;
+import com.ceraphi.utils.*;
+import com.ceraphi.utils.Lcho.LCOHYearResponse;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.web.bind.annotation.*;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+@Component
+public class DeepWellOutPutController {
+    @Autowired
+    public static  WellDataCalculationImpl wellDataService=new WellDataCalculationImpl();
+
+    public static DeepWellOutPut deepWellOutPut = new DeepWellOutPut();
+    public static int WELL_DELTA = 20;
+    public static CostEstimationDeepWell costEstimationDeepWell = new CostEstimationDeepWell();
+    public static DeepWellOpex deepWellOpex = new DeepWellOpex();
+public static double  ELECTRICAL_cost=0.2;
+//    @PostMapping("/deepWellOutPuts")
+    public DoubleResponseDeep  deepWellOutPuts(  Calculation calculation) {
+
+
+        // step 1:---------------------------------------------------------------------
+        Double deliverableTemp = calculation.getProcess_required_temp();
+        Double networkLength = calculation.getNetwork_length();
+        deepWellOutPut.setDeliverable_Temp(deliverableTemp);
+        deepWellOutPut.setProcess_Return_Temp(deliverableTemp - 20);
+
+
+        //step 2:----------------------------------------------------------------
+        double minWellOutLetTemp = deliverableTemp * 1.2;
+        int wellFlowRate = 15;
+        int DeepWellFlowRate = 15;
+        deepWellOutPut.setWell_Flow_rate(wellFlowRate);
+
+
+        //step 3:---------------------------------------------------------------
+        List<ExcelColumns> closestRowByGradient = findClosestRowByGradient(calculation.getThermal_gradient());
+
+
+        //step 4:---------------------------------------------------------------
+        WellDataResult wellDataResult = processWellData(closestRowByGradient, WELL_DELTA, minWellOutLetTemp, DeepWellFlowRate);
+        deepWellOutPut.setWell_pump_power(wellDataResult.getWellPumpPower());
+        double wellPumpPower = wellDataResult.getWellPumpPower();
+        deepWellOutPut.setWell_pressure_drop(wellDataResult.getWellPressureDrop());
+        deepWellOutPut.setBottom_Hole_Temp(wellDataResult.getBottomHoleTemp());
+        deepWellOutPut.setWell_Depth(wellDataResult.getWellDepthTVD());
+        double well_Depth=wellDataResult.getWellDepthTVD();
+        deepWellOutPut.setWell_Outlet_Temp(wellDataResult.getWellOutletTemp());
+        double wellOutletTemp = wellDataResult.getWellOutletTemp();
+        deepWellOutPut.setWell_inlet_temp(minWellOutLetTemp - WELL_DELTA);
+        double wells = calculation.getCapacity_req_MW() / (wellDataResult.getKwt() / 1000);
+        int noOfWells = (int) Math.ceil(wells);
+        deepWellOutPut.setNo_of_wells(noOfWells);
+
+
+        //step 5:----------------------------------------------------------------
+        double flow = DeepWellFlowRate * noOfWells;
+        PressureData pressureData = wellDataService.calculateBoostPumpPowerForDeepWell(flow, noOfWells, calculation.getNetwork_length());
+        deepWellOutPut.setDelivery_pressure_loss(pressureData.getPressure());
+        deepWellOutPut.setReturn_Pressure_loss(pressureData.getPressure());
+        // Calculate boost pump power without efficiency
+        double boostPumpPower = (pressureData.getPressure() + pressureData.getPressure()) * 0.1 * wellFlowRate * noOfWells * networkLength;
+        // Adjust boost pump power for efficiency
+        double boostPumpEfficiency = 0.75;
+        double BoostPumpPower = boostPumpPower / boostPumpEfficiency;
+        deepWellOutPut.setBoost_pump_power(BoostPumpPower);
+
+
+        //step 6:---------------------------------------------------------------
+        double ID = pressureData.getInternalDiameter();
+        double ambientTemp = calculation.getAmbient_temperature();
+        double tempLossPerKM = calculateTempLossFromHEXAndDeliveryPipe(ambientTemp, ID, flow, wellOutletTemp);
+        deepWellOutPut.setDelivery_temp_loss(tempLossPerKM);
+        // Calculate IN (initial temperature at the well outlet)
+        double IN = wellOutletTemp - (tempLossPerKM * networkLength);
+        // Calculate Out using IN, requiredCapacity, wellFlowRate, noOfWells
+        double Out = IN - (Math.round(calculation.getCapacity_req_MW() * 1000) / (wellFlowRate * noOfWells * 4.184));
+        deepWellOutPut.setIn(IN);
+        deepWellOutPut.setOut(Out);
+
+
+        //step 7:---------------------------------------------------------------
+        // Initialize constants
+        double Thermal_Conductivity_pipe = 0.0244;
+        int Density = 997;
+        double Cp = 4.184;
+        int Pipe_Thickness = 2;
+        int Length = 1000;
+        // ID is the pipe internal diameter calculated in step 3
+        // Ambient temp is a user input
+        double Ambient_Temp = calculation.getAmbient_temperature();
+        // Assign the user-provided ambient temperature here
+        // Get radii
+        double internalDiameter = ID * 0.0254; // CONVERT TO M
+        double thickness = Pipe_Thickness * 0.0254;
+        double externalDiameter = internalDiameter + 2 * thickness;
+        double radiusExternal = externalDiameter / 2;
+        double radiusInternal = internalDiameter / 2;
+        // Calculate thermal resistance of pipe
+        double thermalResistance = Math.log(radiusExternal / radiusInternal) / Thermal_Conductivity_pipe;
+        // Calculate thermal energy across pipe
+        // Convert length from km to m
+        double Q = 2 * Math.PI * Length * 1000 * (wellOutletTemp - Ambient_Temp) / thermalResistance;
+        // Calculate output Temp
+        // kJ to J and 1 to m3 conversion cancel.
+        double Temp_Out = wellOutletTemp - (Q / (Density * Cp * flow));
+        // Calculate amount Temp loss per km.
+        double Temp_Loss_Per_Km = (wellOutletTemp - Temp_Out) / Length;
+        // For return temp loss, use the same Temp_Loss_Per_Km value.
+        double Return_Temp_Loss_Per_Km = Temp_Loss_Per_Km;
+        deepWellOutPut.setReturn_Temp_loss(Return_Temp_Loss_Per_Km);
+
+
+        //step 8:------------------------------------------------------------------------
+        // You can use Temp_Loss_Per_Km and Return_Temp_Loss_Per_Km as needed in your application.
+        // Calculate total consumption
+        double totalConsumption = boostPumpPower + (wellDataResult.getWellPumpPower() * noOfWells);
+        // Calculate outlet overall annual electrical consumption
+        double overallAnnualElectricalConsumption = totalConsumption * 8600 / 1000;
+        deepWellOutPut.setOverall_Annual_Consumption(overallAnnualElectricalConsumption);
+
+
+
+        try (InputStream inputStream = getClass().getResourceAsStream("/EstimatedCostDatabaseDeep.xlsx");
+             Workbook workbook = new XSSFWorkbook(inputStream)) {
+
+            Sheet sheet = workbook.getSheetAt(0);
+            Iterator<Row> rowIterator = sheet.iterator();
+
+            while (rowIterator.hasNext()) {
+                Row row = rowIterator.next();
+
+                // Assuming the Excel columns are: Operation, Cost (GBP), Per Well?
+                Cell operationCell = row.getCell(0, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+                Cell costCell = row.getCell(1, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+                Cell perWellCell = row.getCell(2, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+
+                String operation = operationCell.getStringCellValue();
+                double cost = costCell.getCellType() == CellType.NUMERIC ? costCell.getNumericCellValue() : 0.0;
+                String perWell = perWellCell.getStringCellValue().trim();
+
+                // Set the values for these variables based on your data
+                double well = noOfWells; // Assuming this value is available
+                double wellDepth = wellDataResult.getWellDepthTVD(); // Replace with your actual value
+                double requiredCapacity = calculation.getCapacity_req_MW(); // Replace with your actual value
+                double network_Length = calculation.getNetwork_length(); // Replace with your actual value
+
+                // Perform calculations based on conditions
+                if ("Y".equalsIgnoreCase(perWell)) {
+                    if ("Borehole drilling & construction".equalsIgnoreCase(operation) ||
+                            "Well completion".equalsIgnoreCase(operation)) {
+                        cost *= well; // Multiply by well and well depth
+                    } else if ("Mechanical circulation pump".equalsIgnoreCase(operation)) {
+                        cost *= well; // Multiply by required capacity
+                    } else if ("Heat exchanger installation ".equalsIgnoreCase(operation)) {
+                        cost *= well; // Multiply by network length
+                    } else if ("Heat connection".equalsIgnoreCase(operation)) {
+                        cost *= well; // Multiply by a constant factor
+                    }
+                }
+
+                // Store the calculated cost in the appropriate field of the CostEstimationDeepWell object
+                switch (operation) {
+                    case "Site preparation & civil engineering":
+                        costEstimationDeepWell.setSite_preparation_civil_engineering(cost);
+                        break;
+                    case "Drilling unit mob/demob":
+                        costEstimationDeepWell.setDrilling_unit_mob_demob(cost);
+                        break;
+                    case "Borehole drilling & construction":
+                        costEstimationDeepWell.setBorehole_drilling_construction(cost*wellDepth);
+                        break;
+                    case "Well completion":
+                        costEstimationDeepWell.setWell_completion(cost*wellDepth);
+                        break;
+                    case "Mechanical circulation pump":
+                        costEstimationDeepWell.setMechanical_circulation_pump(cost);
+                        break;
+                    case "Heat exchanger installation ":
+                        costEstimationDeepWell.setHeat_exchanger_installation(cost);
+                        break;
+                    case "Heat connection":
+                        costEstimationDeepWell.setHeat_connection(cost*network_Length*1000*2);
+                        break;
+                    default:
+                        break;
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+// Calculate the total CAPEX
+        double totalCAPEX = costEstimationDeepWell.getSite_preparation_civil_engineering() +
+                costEstimationDeepWell.getDrilling_unit_mob_demob() +
+                costEstimationDeepWell.getBorehole_drilling_construction() +
+                costEstimationDeepWell.getWell_completion() +
+                costEstimationDeepWell.getMechanical_circulation_pump() +
+                costEstimationDeepWell.getHeat_connection() +
+                costEstimationDeepWell.getHeat_exchanger_installation();
+
+        costEstimationDeepWell.setTotal(totalCAPEX);
+
+
+        try (InputStream inputStream = getClass().getResourceAsStream("/EstimatedCostDatabaseDeep.xlsx");
+             Workbook workbook = new XSSFWorkbook(inputStream)) {
+
+            Sheet sheet = workbook.getSheetAt(3); // Assuming the data is on the fourth sheet
+            Iterator<Row> rowIterator = sheet.iterator();
+
+            while (rowIterator.hasNext()) {
+                Row row = rowIterator.next();
+
+                // Assuming the Excel columns are: Operation, Cost (GBP), Per Well?
+                Cell operationCell = row.getCell(0, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+                Cell costCell = row.getCell(1, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+                Cell perWellCell = row.getCell(2, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+
+                String operation = operationCell.getStringCellValue();
+                double cost = costCell.getCellType() == CellType.NUMERIC ? costCell.getNumericCellValue() : 0.0;
+                String perWell = perWellCell.getStringCellValue().trim();
+
+                // Perform calculations based on conditions
+                if ("Y".equalsIgnoreCase(perWell)) {
+                    if ("Mechanical pump power consumption".equalsIgnoreCase(operation)) {
+                        // Multiply cost by well pumping power and 8600, then by electrical cost
+                        cost *= noOfWells;
+                    } else if ("Boost pump power consumption".equalsIgnoreCase(operation)) {
+                        // Multiply cost by 8600, then by electrical cost
+                        cost *= noOfWells;
+                    } else if ("Well maintenance".equalsIgnoreCase(operation)) {
+                        // Multiply cost by no of wells from deep well output
+                        cost *= noOfWells;
+                    }
+                }
+
+                // Store the calculated cost in the appropriate field of the DeepWellOpex object
+                switch (operation) {
+                    case "Mechanical pump power consumption":
+                        deepWellOpex.setMechanicalPumpPowerConsumption(cost *wellPumpPower*ELECTRICAL_cost* 8600);
+                        break;
+                    case "Boost pump power consumption":
+                        deepWellOpex.setBoostPumpPowerConsumption(cost*BoostPumpPower* ELECTRICAL_cost*8600);
+                        break;
+                    case "Well maintenance":
+                        deepWellOpex.setWellMaintenance(cost);
+                        break;
+                    default:
+                        break;
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        // Calculate the total Opex for deep well
+        double totalOpex = deepWellOpex.getMechanicalPumpPowerConsumption() +
+                deepWellOpex.getBoostPumpPowerConsumption() +
+                deepWellOpex.getWellMaintenance();
+
+
+        deepWellOpex.setTotal(totalOpex);
+        DoubleResponseDeep doubleResponseDeep = new DoubleResponseDeep();
+        doubleResponseDeep.setCostEstimationDeepWell(costEstimationDeepWell);
+        doubleResponseDeep.setDeepWellOutPutCalculation(deepWellOutPut);
+        doubleResponseDeep.setDeepWellOpex(deepWellOpex);
+//        return doubleResponseDeep;
+
+
+//        ApiResponseData<?> apiResponseData = ApiResponseData.builder()
+//                .status(HttpStatus.OK.value())
+//                .data(doubleResponseDeep)
+//                .build();
+        return doubleResponseDeep;
+
+    }
+//--------------------------------------------------------------------------------------------------------------------------------------
+
+    public List<ExcelColumns> findClosestRowByGradient(@RequestParam double gradient) {
+        double[] a = {30, 50}; // Replace with your gradient values
+        double minDist = Double.MAX_VALUE;
+        double closestValue = 0;
+        List<ExcelColumns> newTable = new ArrayList<>();
+
+        try (InputStream inputStream = getClass().getResourceAsStream("/demo.xlsx");
+             Workbook workbook = new XSSFWorkbook(inputStream)) {
+            Sheet sheet = workbook.getSheetAt(0);
+
+            // Find the closest gradient value
+            for (double value : a) {
+                double dist = Math.abs(value - gradient);
+                if (dist < minDist) {
+                    minDist = dist;
+                    closestValue = value;
+                }
+            }
+
+            // Iterate through rows and filter by closest gradient
+            for (Row row : sheet) {
+                Cell cell = row.getCell(0); // Assuming gradient is in the first column (column index 0)
+                if (cell != null && cell.getCellType() == CellType.NUMERIC && cell.getNumericCellValue() == closestValue) {
+                    // Create a DatabaseEntry and add it to newTable
+                    ExcelColumns column = new ExcelColumns();
+                    column.setGeothermalGradient(row.getCell(0).getNumericCellValue());
+                    column.setSteadyStateTemp(row.getCell(1).getNumericCellValue());
+                    column.setKWt(row.getCell(2).getNumericCellValue());
+                    column.setFlowRate(row.getCell(3).getNumericCellValue());
+                    column.setPumpingPower(row.getCell(4).getNumericCellValue());
+                    column.setDepth(row.getCell(5).getNumericCellValue());
+                    column.setDelta(row.getCell(6).getNumericCellValue());
+                    column.setPressureLoss(row.getCell(7).getNumericCellValue());
+                    column.setBHT(row.getCell(8).getNumericCellValue());
+                    column.setReturn(row.getCell(9).getNumericCellValue());
+                    newTable.add(column);
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return newTable;
+    }
+
+
+    public WellDataResult processWellData(List<ExcelColumns> filteredTable, double wellDelta, double minWellOutletTemp, double Deepwellflowrate) {
+        // Initialize variables to track the minimum steady state temp and its corresponding entry
+        double minSteadyStateTemp = Double.MAX_VALUE;
+        ExcelColumns minSteadyStateEntry = null;
+
+        // Loop through the filtered table and apply conditions
+        for (ExcelColumns entry : filteredTable) {
+            // Remove rows where steady state temp is less than minWellOutletTemp
+            if (entry.getSteadyStateTemp() >= minWellOutletTemp) {
+                // Remove rows where flow rate is not equal to Deepwellflowrate
+                if (entry.getFlowRate() == Deepwellflowrate) {
+                    // Remove rows where delta T is not equal to well delta
+                    if (entry.getDelta() == wellDelta) {
+                        // Track the minimum steady state temp and its entry
+                        if (entry.getSteadyStateTemp() < minSteadyStateTemp) {
+                            minSteadyStateTemp = entry.getSteadyStateTemp();
+                            minSteadyStateEntry = entry;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Calculate pumping power and pressure loss for the minimum steady state temp entry
+        double pumpingPower = minSteadyStateEntry.getPumpingPower();
+        double pressureLoss = minSteadyStateEntry.getPressureLoss();
+        double bht = minSteadyStateEntry.getBHT();
+        double wellDepth = minSteadyStateEntry.getDepth();
+        double kWt = minSteadyStateEntry.getKWt();
+        double wellOutletTemp1 = minSteadyStateEntry.getSteadyStateTemp();
+
+        // Create a WellDataResult object to store the results
+        WellDataResult result = new WellDataResult();
+        result.setWellOutletTemp(wellOutletTemp1);
+        result.setWellPumpPower(pumpingPower);
+        result.setWellPressureDrop(pressureLoss);
+        result.setBottomHoleTemp(bht);
+        result.setWellDepthTVD(wellDepth);
+        result.setKwt(kWt);
+
+        return result;
+    }
+
+
+    public PressureResult calculateBoostPressureDrops(double deepWellFlowRate) {
+        int[] array1 = new int[20];
+        for (int i = 0; i < 20; i++) {
+            array1[i] = i + 1;
+        }
+        double[] array2 = new double[20];
+        double internalDiam = 0.0; // Initialize internalDiam
+        for (int i = 0; i < array1.length; i++) {
+            int x = array1[i];
+            internalDiam = x * 0.025;
+            double roughness = 0.02 / 100000;
+            double kinematicViscosity = 1.004e-6;
+            double density = 997; // DENSITY
+            double k = roughness / internalDiam;
+
+            double velocity = (deepWellFlowRate / 1e3) / (Math.PI * Math.pow(internalDiam / 2, 2));
+            double r = velocity * internalDiam / kinematicViscosity;
+
+            double x1 = k * r * (Math.log(10) / 18.574);
+            double x2 = Math.log(r * (Math.log(10) / 5.02));
+            double f = x2 - 0.2;
+
+            double e = (Math.log(x1 + f) - 0.2) / (1 + x1 + f);
+            f = f - (1 + x1 + f + 0.5 * e) * e * (x1 + f) / (1 + x1 + f + e * (1 + e / 3));
+            e = (Math.log(x1 + f) + f - x2) / (1 + x1 + f);
+            f = f - (1 + x1 + f + 0.5 * e) * e * (x1 + f) / (1 + x1 + f + e * (1 + e / 3));
+            f = 0.5 * Math.log(10) / f;
+            f = f * f;
+            double darcyFF = f;
+
+            double pressure = (darcyFF * (1000 / internalDiam) * (Math.pow(velocity, 2) * density / 2)) / (1e5);
+
+            array2[i] = pressure;
+        }
+
+        int index = -1;
+        for (int i = 0; i < array2.length - 1; i++) {
+            if (Math.abs(array2[i] - array2[i + 1]) < 10) {
+                index = i;
+                break;
+            }
+        }
+        if (index == -1) {
+            index = array2.length - 1;
+        }
+
+        double deliveryPressureLoss = array2[index];
+
+        // Return the internal diameter and pressure as a pair
+        return
+                new PressureResult(internalDiam, deliveryPressureLoss);
+    }
+
+
+    static class PressureResult {
+        private double pressure;
+        private double internalDiam;
+
+        public PressureResult(double internalDiam, double pressure) {
+            this.internalDiam = internalDiam;
+            this.pressure = pressure;
+        }
+
+        public double getInternalDiam() {
+            return internalDiam;
+        }
+
+        public double getPressure() {
+            return pressure;
+        }
+
+
+    }
+
+    public double calculateTempLossFromHEXAndDeliveryPipe(double ambientTemp, double internalDiameter, double flow, double tempIn) {
+        double Thermal_Conductivity_pipe = 0.0244;
+        int Density = 997;
+        double Cp = 4.184;
+        int Pipe_thickness = 2;
+        int Length = 1000;
+
+        double internalDiameterM = internalDiameter * 0.0254;
+        double thickness = Pipe_thickness * 0.0254;
+        double externalDiameter = internalDiameterM + 2 * thickness;
+        double radiusExternal = externalDiameter / 2;
+        double radiusInternal = internalDiameterM / 2;
+
+        double thermalResistance = Math.log(radiusExternal / radiusInternal) / Thermal_Conductivity_pipe;
+
+        // Convert length from km to m
+
+        double q = (2 * Math.PI * Length * 1000 * (tempIn - ambientTemp)) / (thermalResistance);
+
+        // kJ to J and 1 to m^3 conversion cancel.
+        double tempOut = tempIn - (q / (Density * Cp * flow));
+
+        // Calculate the temperature loss per km
+        double tempLossPerKm = (tempIn - tempOut) / Length;
+
+        return tempLossPerKm;
+
+    }
+    @GetMapping("/deepwell/lcoh")
+    public List<LCOHYearResponse> getDeepWellLCOHData() {
+        List<LCOHYearResponse> responseList = new ArrayList<>();
+
+        // Step 1 - Initialize variables
+        BigDecimal price = new BigDecimal("0.11");
+        BigDecimal discountRate = new BigDecimal("0.035");
+
+        // Step 2 - Initialize arrays
+        int[] years = new int[41];
+        for (int i = 0; i <= 40; i++) {
+            years[i] = i;
+        }
+
+        int rows = years.length;
+
+        // Initialize arrays
+        BigDecimal[] capex = new BigDecimal[rows];
+        BigDecimal[] opex = new BigDecimal[rows];
+        BigDecimal[] production = new BigDecimal[rows];
+        BigDecimal[] discountedFactor = new BigDecimal[rows];
+        BigDecimal[] discountedCashFlow = new BigDecimal[rows];
+        BigDecimal[] cumulativeCashFlow = new BigDecimal[rows];
+        BigDecimal[] discountedCost = new BigDecimal[rows];
+        BigDecimal[] discountedProduction = new BigDecimal[rows];
+
+        // Set constant values for capex and opex for Deep Well
+        BigDecimal deepWellCapex = new BigDecimal("2742807");
+        BigDecimal deepWellOpex = new BigDecimal("69317.6"); // Modify this value
+
+        // Populate capex, opex, and production arrays with constant values
+        for (int i = 0; i < rows; i++) {
+            capex[i] = (i == 0) ? deepWellCapex : new BigDecimal("153057"); // Modify this value
+            opex[i] = (i == 0) ? deepWellOpex : deepWellOpex;
+            production[i] = (i == 0) ? BigDecimal.ZERO : new BigDecimal("2100"); // Replace with the actual value
+        }
+
+        // Create and initialize the "LCOH years" array for Deep Well
+        BigDecimal[][] lcohYears = new BigDecimal[][]{
+                {new BigDecimal("25"), BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO},
+                {new BigDecimal("30"), BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO},
+                {new BigDecimal("40"), BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO}
+        };
+
+        // Calculate financial metrics for Deep Well
+        for (int i = 0; i < rows; i++) {
+            // Calculate Discounted Factor
+            discountedFactor[i] = BigDecimal.ONE.divide(
+                    BigDecimal.ONE.add(discountRate).pow(years[i]), 10, RoundingMode.HALF_UP
+            );
+
+            // Calculate Cashflow based on Price, Production, CAPEX, and OPEX
+            BigDecimal cashFlow = production[i].multiply(price).subtract(capex[i].add(opex[i]));
+
+            // Calculate Discounted Cashflow
+            discountedCashFlow[i] = discountedFactor[i].multiply(cashFlow);
+
+            // Calculate Cumulative Cashflow
+            cumulativeCashFlow[i] = (i == 0) ? discountedCashFlow[i] : discountedCashFlow[i].add(cumulativeCashFlow[i - 1]);
+
+            // Calculate Discounted Cost and Discounted Production
+            discountedCost[i] = capex[i].multiply(discountedFactor[i]).add(opex[i].multiply(discountedFactor[i]));
+            discountedProduction[i] = production[i].multiply(discountedFactor[i]);
+        }
+
+        // Calculate NPV as the sum of discounted cash flows
+        BigDecimal npv = BigDecimal.ZERO;
+        for (int i = 0; i < rows; i++) {
+            npv = npv.add(discountedCashFlow[i]);
+        }
+
+        // Fill in the "LCOH years" array for Deep Well
+        for (int i = 0; i < lcohYears.length; i++) {
+            int x;
+            if (i == 0) {
+                x = 26;
+            } else if (i == 1) {
+                x = 31;
+            } else {
+                x = 41;
+            }
+
+            lcohYears[i][1] = calculateLCOH(x - 1, discountedCost, discountedProduction);
+            lcohYears[i][2] = cumulativeCashFlow[x - 1];
+            BigDecimal irrValue = calculateIRR(x - 1, discountedCashFlow);
+            lcohYears[i][3] = (irrValue == null) ? new BigDecimal("Negative") : irrValue; // Set "Negative" as a string
+            lcohYears[i][4] = cumulativeCashFlow[x - 1].divide(deepWellCapex, 10, RoundingMode.HALF_UP).add(BigDecimal.ONE);
+        }
+
+        // Create LCOHYearResponse objects for Deep Well and add them to the responseList
+        for (int i = 0; i < lcohYears.length; i++) {
+            int x;
+            if (i == 0) {
+                x = 26;
+            } else if (i == 1) {
+                x = 31;
+            } else {
+                x = 41;
+            }
+
+            BigDecimal lcoh = calculateLCOH(x - 1, discountedCost, discountedProduction);
+            BigDecimal pi = cumulativeCashFlow[x - 1].divide(deepWellCapex, 10, RoundingMode.HALF_UP).add(BigDecimal.ONE);
+
+            // Create an instance of LCOHYearResponse for Deep Well
+            LCOHYearResponse response = new LCOHYearResponse(lcohYears[i][0], lcoh, npv, lcohYears[i][3], pi);
+            responseList.add(response);
+        }
+
+        return responseList;
+    }
+    private static BigDecimal calculateLCOH(int currentYear, BigDecimal[] discountedCost, BigDecimal[] discountedProduction) {
+        BigDecimal totalCost = BigDecimal.ZERO;
+        BigDecimal totalProduction = BigDecimal.ZERO;
+
+        for (int i = 0; i <= currentYear; i++) {
+            totalCost = totalCost.add(discountedCost[i]);
+            totalProduction = totalProduction.add(discountedProduction[i]);
+        }
+
+        if (totalProduction.compareTo(BigDecimal.ZERO) == 0) {
+            return BigDecimal.ZERO;
+        }
+
+        return totalCost.divide(totalProduction, 10, RoundingMode.HALF_UP);
+    }
+    private static BigDecimal calculateIRR(int currentYear, BigDecimal[] discountedCashFlow) {
+        BigDecimal irr = BigDecimal.ZERO;
+        BigDecimal lowerBound = new BigDecimal("-1.0");
+        BigDecimal upperBound = new BigDecimal("1.0");
+        BigDecimal epsilon = new BigDecimal("0.00001");
+
+        for (int i = 0; i < 1000; i++) {
+            BigDecimal guess = lowerBound.add(upperBound).divide(BigDecimal.valueOf(2), MathContext.DECIMAL128);
+            BigDecimal npv = BigDecimal.ZERO;
+
+            boolean denominatorZero = false; // Flag to check if denominator could be zero
+
+            for (int j = 0; j <= currentYear; j++) {
+                BigDecimal denominator = BigDecimal.ONE.add(guess).pow(j);
+
+                // Check if the denominator is close to zero
+                if (denominator.abs().compareTo(epsilon) < 0) {
+                    denominatorZero = true;
+                    break; // Skip this iteration
+                }
+
+                npv = npv.add(discountedCashFlow[j].divide(denominator, MathContext.DECIMAL128));
+            }
+
+            if (denominatorZero) {
+                continue; // Skip this iteration and try the next guess
+            }
+
+            if (npv.abs().compareTo(epsilon) < 0) {
+                irr = guess;
+                break;
+            }
+
+            if (npv.compareTo(BigDecimal.ZERO) > 0) {
+                lowerBound = guess;
+            } else {
+                upperBound = guess;
+            }
+        }
+
+        if (irr.compareTo(new BigDecimal("-1.0")) < 0 || irr.compareTo(new BigDecimal("1.0")) > 0) {
+            // IRR calculation failed, return null
+            return null;
+        }
+
+        // Convert IRR to percentage
+        return irr.multiply(BigDecimal.valueOf(100));
+    }
+
+
+}
+
+
+
