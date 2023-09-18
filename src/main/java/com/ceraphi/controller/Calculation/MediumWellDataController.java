@@ -66,7 +66,7 @@ public class MediumWellDataController {
 // Format the double value to have one decimal place
         double roundedValue = Double.parseDouble(decimalFormat.format(Input));
 
-double workInput = roundedValue;
+        double workInput = roundedValue;
         double evaporator = condenser - workInput;
         outputCalculation.setEvaporator(evaporator);
         double wells = Math.round((evaporator / (interpolatedWellData.getCapacity() / 1000)));
@@ -184,6 +184,7 @@ double workInput = roundedValue;
 
 
         //================================startOfOpexHeatPump=========================================================
+        double totalOpex = 0;
         try (InputStream inputStream = getClass().getResourceAsStream("/EstimatedCostDatabasehp.xlsx");
              Workbook workbook = new XSSFWorkbook(inputStream)) {
 
@@ -219,12 +220,12 @@ double workInput = roundedValue;
                 // Store the calculated cost in the appropriate field of the DeepWellOpex object
                 switch (operation) {
                     case "Heat pump electrical consumption":
-                        heatPumpOpex.setHeat_pump_electrical_consumption(cost *workInput*1000*calculation.getMin_operational_hours()*electricalCost);
+                        heatPumpOpex.setHeat_pump_electrical_consumption(cost * workInput * 1000 * calculation.getMin_operational_hours() * electricalCost);
                         break;
                     case "Pumping power consumption":
-                       double pumpingPowerConsumption = cost; // As it has 'Y' in per well column
-                        pumpingPowerConsumption = (pumpingPowerConsumption *wellPumpingPower + BoostPumpPower) *  calculation.getMin_operational_hours()  * electricalCost;
-                       heatPumpOpex.setPumping_power_consumption(pumpingPowerConsumption);
+                        double pumpingPowerConsumption = cost; // As it has 'Y' in per well column
+                        pumpingPowerConsumption = (pumpingPowerConsumption * wellPumpingPower + BoostPumpPower) * calculation.getMin_operational_hours() * electricalCost;
+                        heatPumpOpex.setPumping_power_consumption(pumpingPowerConsumption);
                         break;
                     case "Well Maintenance ":
                         heatPumpOpex.setWellMaintenance(cost);
@@ -233,8 +234,8 @@ double workInput = roundedValue;
                         break;
                 }
             }
-            double v2 = heatPumpOpex.getPumping_power_consumption() + heatPumpOpex.getWellMaintenance() + heatPumpOpex.getHeat_pump_electrical_consumption();
-            heatPumpOpex.setTotalOpex(v2);
+            totalOpex = heatPumpOpex.getPumping_power_consumption() + heatPumpOpex.getWellMaintenance() + heatPumpOpex.getHeat_pump_electrical_consumption();
+            heatPumpOpex.setTotalOpex(totalOpex);
             heatPumpOpex.setWellMaintenance(heatPumpOpex.getWellMaintenance());
             heatPumpOpex.setHeat_pump_electrical_consumption(heatPumpOpex.getHeat_pump_electrical_consumption());
             heatPumpOpex.setPumping_power_consumption(heatPumpOpex.getPumping_power_consumption());
@@ -258,7 +259,18 @@ double workInput = roundedValue;
         EmissionCalculator emissionCalculator = new EmissionCalculator();
         EmissionData emissionData = emissionCalculator.calculateEmissions(calculation.getCapacity_req_MW(), calculation.getMin_operational_hours(), annualConsumption, DeepWellAnnualConsumption);
         doubleResponseClass.setEmissionData(emissionData);
-
+        //lcoh of DeepWell
+        SensitiveAnalysisDeepWell sensitiveAnalysisDeepWell = new SensitiveAnalysisDeepWell();
+        CostEstimationDeepWell costEstimationDeepWell1 = doubleResponseDeep.getCostEstimationDeepWell();
+        double DeepWelltotalCAPEX = costEstimationDeepWell1.getTotal();
+        DeepWellOpex deepWellOpex1 = doubleResponseDeep.getDeepWellOpex();
+        double DeepWelltotalOPEX = deepWellOpex1.getTotal();
+        List<LCOHYearResponse> lcohYearResponses = sensitiveAnalysisDeepWell.lcohResponseDeepWell(DeepWelltotalCAPEX,DeepWelltotalOPEX);
+        doubleResponseClass.setLcohYearResponseDeepWell(lcohYearResponses);
+        //lcoh of HeatPump
+        SensitiviteAnalysisHeatPump sensitiveAnalysisHeatPump = new SensitiviteAnalysisHeatPump();
+        List<LCOHYearResponse> lcohYearResponses1 = sensitiveAnalysisHeatPump.lcohResponseHeatPump(totalCAPEXmedium, totalOpex);
+        doubleResponseClass.setLcohYearResponseHeatPumpWell(lcohYearResponses1);
         ApiResponseData<?> apiResponseData = ApiResponseData.builder()
                 .status(HttpStatus.OK.value())
                 .data(doubleResponseClass)
@@ -520,6 +532,7 @@ double workInput = roundedValue;
         DoubleResponseDeep doubleResponseDeep = new DoubleResponseDeep();
         doubleResponseDeep.setCostEstimationDeepWell(costEstimationDeepWell);
         doubleResponseDeep.setDeepWellOutPutCalculation(deepWellOutPut);
+
         doubleResponseDeep.setDeepWellOpex(deepWellOpex);
         return doubleResponseDeep;
 
@@ -719,290 +732,4 @@ double workInput = roundedValue;
 
     }
 
-    @GetMapping("/deepwell/lcoh")
-    public List<LCOHYearResponse> getDeepWellLCOHData() {
-        List<LCOHYearResponse> responseList = new ArrayList<>();
-
-        // Step 1 - Initialize variables
-        BigDecimal price = new BigDecimal("110");
-        BigDecimal discountRate = new BigDecimal("5.3");
-
-        // Step 2 - Initialize arrays
-        int[] years = new int[41];
-        for (int i = 0; i <= 40; i++) {
-            years[i] = i;
-        }
-
-        int rows = years.length;
-
-        // Initialize arrays
-        BigDecimal[] capex = new BigDecimal[rows];
-        BigDecimal[] opex = new BigDecimal[rows];
-        BigDecimal[] production = new BigDecimal[rows];
-        BigDecimal[] discountedFactor = new BigDecimal[rows];
-        BigDecimal[] discountedCashFlow = new BigDecimal[rows];
-        BigDecimal[] cumulativeCashFlow = new BigDecimal[rows];
-        BigDecimal[] discountedCost = new BigDecimal[rows];
-        BigDecimal[] discountedProduction = new BigDecimal[rows];
-
-        // Set constant values for capex and opex for Deep Well
-        BigDecimal deepWellCapex = new BigDecimal("2742807");
-        BigDecimal deepWellOpex = new BigDecimal("69317.6"); // Modify this value
-
-        // Populate capex, opex, and production arrays with constant values
-        for (int i = 0; i < rows; i++) {
-            capex[i] = (i == 0) ? deepWellCapex : new BigDecimal("153057"); // Modify this value
-            opex[i] = (i == 0) ? deepWellOpex : deepWellOpex;
-            production[i] = (i == 0) ? BigDecimal.ZERO : new BigDecimal("2100"); // Replace with the actual value
-        }
-
-        // Create and initialize the "LCOH years" array for Deep Well
-        BigDecimal[][] lcohYears = new BigDecimal[][]{
-                {new BigDecimal("25"), BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO},
-                {new BigDecimal("30"), BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO},
-                {new BigDecimal("40"), BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO}
-        };
-
-        // Calculate financial metrics for Deep Well
-        for (int i = 0; i < rows; i++) {
-            // Calculate Discounted Factor
-            discountedFactor[i] = BigDecimal.ONE.divide(
-                    BigDecimal.ONE.add(discountRate).pow(years[i]), 10, RoundingMode.HALF_UP
-            );
-
-            // Calculate Cashflow based on Price, Production, CAPEX, and OPEX
-            BigDecimal cashFlow = production[i].multiply(price).subtract(capex[i].add(opex[i]));
-
-            // Calculate Discounted Cashflow
-            discountedCashFlow[i] = discountedFactor[i].multiply(cashFlow);
-
-            // Calculate Cumulative Cashflow
-            cumulativeCashFlow[i] = (i == 0) ? discountedCashFlow[i] : discountedCashFlow[i].add(cumulativeCashFlow[i - 1]);
-
-            // Calculate Discounted Cost and Discounted Production
-            discountedCost[i] = capex[i].multiply(discountedFactor[i]).add(opex[i].multiply(discountedFactor[i]));
-            discountedProduction[i] = production[i].multiply(discountedFactor[i]);
-        }
-
-        // Calculate NPV as the sum of discounted cash flows
-        BigDecimal npv = BigDecimal.ZERO;
-        for (int i = 0; i < rows; i++) {
-            npv = npv.add(discountedCashFlow[i]);
-        }
-
-        // Fill in the "LCOH years" array for Deep Well
-        for (int i = 0; i < lcohYears.length; i++) {
-            int x;
-            if (i == 0) {
-                x = 26;
-            } else if (i == 1) {
-                x = 31;
-            } else {
-                x = 41;
-            }
-
-            lcohYears[i][1] = calculateLCOH(x - 1, discountedCost, discountedProduction);
-            lcohYears[i][2] = cumulativeCashFlow[x - 1];
-            BigDecimal irrValue = calculateIRR(x - 1, discountedCashFlow);
-            lcohYears[i][3] = (irrValue == null) ? new BigDecimal("Negative") : irrValue; // Set "Negative" as a string
-            lcohYears[i][4] = cumulativeCashFlow[x - 1].divide(deepWellCapex, 10, RoundingMode.HALF_UP).add(BigDecimal.ONE);
-        }
-
-        // Create LCOHYearResponse objects for Deep Well and add them to the responseList
-        for (int i = 0; i < lcohYears.length; i++) {
-            int x;
-            if (i == 0) {
-                x = 26;
-            } else if (i == 1) {
-                x = 31;
-            } else {
-                x = 41;
-            }
-
-            BigDecimal lcoh = calculateLCOH(x - 1, discountedCost, discountedProduction);
-            BigDecimal pi = cumulativeCashFlow[x - 1].divide(deepWellCapex, 10, RoundingMode.HALF_UP).add(BigDecimal.ONE);
-
-            // Create an instance of LCOHYearResponse for Deep Well
-            LCOHYearResponse response = new LCOHYearResponse(lcohYears[i][0], lcoh, npv, lcohYears[i][3], pi);
-            responseList.add(response);
-        }
-
-        return responseList;
-    }
-
-
-//  ?  end ofDeepWell
-//            LCOH
-
-    @GetMapping("/lcoh")
-    public List<LCOHYearResponse> getLCOHData() {
-        List<LCOHYearResponse> responseList = new ArrayList<>();
-
-        // Step 1 - Initialize variables
-        BigDecimal price = new BigDecimal("0.11");
-        BigDecimal discountRate = new BigDecimal("0.035");
-
-        // Step 2 - Initialize arrays
-        int[] years = new int[41];
-        for (int i = 0; i <= 40; i++) {
-            years[i] = i;
-        }
-
-        int rows = years.length;
-
-        // Initialize arrays
-        BigDecimal[] capex = new BigDecimal[rows];
-        BigDecimal[] opex = new BigDecimal[rows];
-        BigDecimal[] production = new BigDecimal[rows];
-        BigDecimal[] discountedFactor = new BigDecimal[rows];
-        BigDecimal[] discountedCashFlow = new BigDecimal[rows];
-        BigDecimal[] cumulativeCashFlow = new BigDecimal[rows];
-        BigDecimal[] discountedCost = new BigDecimal[rows];
-        BigDecimal[] discountedProduction = new BigDecimal[rows];
-
-        // Set constant values for capex and opex for the Medium Well
-        BigDecimal mediumWellCapex = new BigDecimal("2742807");
-        BigDecimal mediumWellOpex = new BigDecimal("306680");
-
-        // Populate capex, opex, and production arrays with constant values
-        for (int i = 0; i < rows; i++) {
-            capex[i] = (i == 0) ? mediumWellCapex : new BigDecimal("153057");
-            opex[i] = (i == 0) ? mediumWellOpex : mediumWellOpex;
-            production[i] = (i == 0) ? BigDecimal.ZERO : new BigDecimal("3300");
-        }
-
-        // Create and initialize the "LCOH years" array
-        BigDecimal[][] lcohYears = new BigDecimal[][]{
-                {new BigDecimal("25"), BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO},
-                {new BigDecimal("30"), BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO},
-                {new BigDecimal("40"), BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO}
-        };
-
-        // Calculate financial metrics
-        for (int i = 0; i < rows; i++) {
-            // Calculate Discounted Factor
-            discountedFactor[i] = BigDecimal.ONE.divide(
-                    BigDecimal.ONE.add(discountRate).pow(years[i]), 10, RoundingMode.HALF_UP
-            );
-
-            // Calculate Cashflow based on Price, Production, CAPEX, and OPEX
-            BigDecimal cashFlow = production[i].multiply(price).subtract(capex[i].add(opex[i]));
-
-            // Calculate Discounted Cashflow
-            discountedCashFlow[i] = discountedFactor[i].multiply(cashFlow);
-
-            // Calculate Cumulative Cashflow
-            cumulativeCashFlow[i] = (i == 0) ? discountedCashFlow[i] : discountedCashFlow[i].add(cumulativeCashFlow[i - 1]);
-
-            // Calculate Discounted Cost and Discounted Production
-            discountedCost[i] = capex[i].multiply(discountedFactor[i]).add(opex[i].multiply(discountedFactor[i]));
-            discountedProduction[i] = production[i].multiply(discountedFactor[i]);
-        }
-
-        // Fill in the "LCOH years" array
-        for (int i = 0; i < lcohYears.length; i++) {
-            int x;
-            if (i == 1) {
-                x = 26;
-            } else if (i == 2) {
-                x = 31;
-            } else {
-                x = 41;
-            }
-
-            lcohYears[i][1] = calculateLCOH(x - 1, discountedCost, discountedProduction);
-            lcohYears[i][2] = cumulativeCashFlow[x - 1];
-            BigDecimal irrValue = calculateIRR(x - 1, discountedCashFlow);
-            lcohYears[i][3] = (irrValue == null) ? new BigDecimal("NaN") : irrValue;
-            lcohYears[i][4] = cumulativeCashFlow[x - 1].divide(capex[0], 10, RoundingMode.HALF_UP).add(BigDecimal.ONE);
-        }
-
-        // Create LCOHYearResponse objects and add them to the responseList
-        for (int i = 0; i < lcohYears.length; i++) {
-            int x;
-            if (i == 0) {
-                x = 26;
-            } else if (i == 1) {
-                x = 31;
-            } else {
-                x = 41;
-            }
-
-            BigDecimal lcoh = calculateLCOH(x - 1, discountedCost, discountedProduction);
-            BigDecimal npv = cumulativeCashFlow[x - 1];
-            BigDecimal irrValue = calculateIRR(x - 1, discountedCashFlow);
-            BigDecimal pi = cumulativeCashFlow[x - 1].divide(capex[0], 10, RoundingMode.HALF_UP).add(BigDecimal.ONE);
-
-            // Create an instance of LCOHYearResponse
-            LCOHYearResponse response = new LCOHYearResponse(lcohYears[i][0], lcoh, npv, irrValue, pi);
-            responseList.add(response);
-        }
-
-        return responseList;
-    }
-
-    private static BigDecimal calculateLCOH(int currentYear, BigDecimal[] discountedCost, BigDecimal[] discountedProduction) {
-        BigDecimal totalCost = BigDecimal.ZERO;
-        BigDecimal totalProduction = BigDecimal.ZERO;
-
-        for (int i = 0; i <= currentYear; i++) {
-            totalCost = totalCost.add(discountedCost[i]);
-            totalProduction = totalProduction.add(discountedProduction[i]);
-        }
-
-        if (totalProduction.compareTo(BigDecimal.ZERO) == 0) {
-            return BigDecimal.ZERO;
-        }
-
-        return totalCost.divide(totalProduction, 10, RoundingMode.HALF_UP);
-    }
-
-    private static BigDecimal calculateIRR(int currentYear, BigDecimal[] discountedCashFlow) {
-        BigDecimal irr = BigDecimal.ZERO;
-        BigDecimal lowerBound = new BigDecimal("-1.0");
-        BigDecimal upperBound = new BigDecimal("1.0");
-        BigDecimal epsilon = new BigDecimal("0.00001");
-
-        for (int i = 0; i < 1000; i++) {
-            BigDecimal guess = lowerBound.add(upperBound).divide(BigDecimal.valueOf(2), MathContext.DECIMAL128);
-            BigDecimal npv = BigDecimal.ZERO;
-
-            boolean denominatorZero = false; // Flag to check if denominator could be zero
-
-            for (int j = 0; j <= currentYear; j++) {
-                BigDecimal denominator = BigDecimal.ONE.add(guess).pow(j);
-
-                // Check if the denominator is close to zero
-                if (denominator.abs().compareTo(epsilon) < 0) {
-                    denominatorZero = true;
-                    break; // Skip this iteration
-                }
-
-                npv = npv.add(discountedCashFlow[j].divide(denominator, MathContext.DECIMAL128));
-            }
-
-            if (denominatorZero) {
-                continue; // Skip this iteration and try the next guess
-            }
-
-            if (npv.abs().compareTo(epsilon) < 0) {
-                irr = guess;
-                break;
-            }
-
-            if (npv.compareTo(BigDecimal.ZERO) > 0) {
-                lowerBound = guess;
-            } else {
-                upperBound = guess;
-            }
-        }
-
-        if (irr.compareTo(new BigDecimal("-1.0")) < 0 || irr.compareTo(new BigDecimal("1.0")) > 0) {
-            // IRR calculation failed, return null
-            return null;
-        }
-
-        // Convert IRR to percentage
-        return irr.multiply(BigDecimal.valueOf(100));
-    }
 }
