@@ -1,9 +1,6 @@
-package com.ceraphi.controller.Calculation;
+package com.ceraphi.utils.ForSpiderCharts;
 
 import com.ceraphi.utils.Lcho.LCOHYearResponse;
-import org.springframework.stereotype.Component;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -11,19 +8,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-@Component
-
-
-public class SensitiveAnalysisDeepWell {
-
-    public double discount_rate = 0.03;
+public class FindDiscountRates {
+    public BigDecimal discount_rate;
     public double selling_price = 0.11 * 1000;
-    public double production_Value = 8600;
+    public double productionValue = 8600;
+    public double electrical_Price_Inflation=0.03;
 
 
-    public List<LCOHYearResponse> lcohResponseDeepWell(double Deep_well_CAPEX,double Deep_well_OPEX  ) {
+    public List<LCOHYearResponse> lcohResponseHeatPump(double medium_well_CAPEX ,double medium_well_OPEX  ) {
         List<LCOHYearResponse> responseList = new ArrayList<>();
-
         // Step 2 - Initialize arrays
         int[] years = new int[41];
         for (int i = 0; i <= 40; i++) {
@@ -46,11 +39,11 @@ public class SensitiveAnalysisDeepWell {
         BigDecimal[] discountedCashFlow = new BigDecimal[rows];
 
         // Set constant values
-        BigDecimal DeepWellCapex = new BigDecimal(Deep_well_CAPEX);
-        BigDecimal DeepWellOpex = new BigDecimal(Deep_well_OPEX);
-        BigDecimal productionValue = new BigDecimal(production_Value);
+        BigDecimal mediumWellCapex = new BigDecimal(medium_well_CAPEX);
+        BigDecimal mediumWellOpex = new BigDecimal(String.valueOf(medium_well_OPEX));
+        BigDecimal productionValue = new BigDecimal("8600");
         BigDecimal price = new BigDecimal(selling_price);
-        BigDecimal electricalPriceInflation = new BigDecimal("0.03"); // 3% inflation
+        BigDecimal electricalPriceInflation = new BigDecimal(electrical_Price_Inflation); // 3% inflation
 
         // Initialize the price inflation factor
         priceInflationFactor[0] = BigDecimal.ONE; // Initial value is 1.00
@@ -65,8 +58,8 @@ public class SensitiveAnalysisDeepWell {
         // Populate capex, opex, and production arrays with constant values
         BigDecimal totalCost = BigDecimal.ZERO;
         for (int i = 0; i < rows; i++) {
-            capex[i] = (i == 0) ? DeepWellCapex : BigDecimal.ZERO;
-            opex[i] = (i != 0) ? DeepWellOpex : BigDecimal.ZERO;
+            capex[i] = (i == 0) ? mediumWellCapex : BigDecimal.ZERO;
+            opex[i] = (i != 0) ? mediumWellOpex : BigDecimal.ZERO;
             production[i] = (i == 0) ? BigDecimal.ZERO : productionValue;
             totalCost = totalCost.add(capex[i].add(opex[i]).multiply(priceInflationFactor[i]));
         }
@@ -84,7 +77,7 @@ public class SensitiveAnalysisDeepWell {
         // Discounted Cost, and Discounted Production
         BigDecimal cumulativeCashFlowValue = BigDecimal.ZERO;
         for (int i = 0; i < rows; i++) {
-            discountedFactor[i] = BigDecimal.ONE.divide(BigDecimal.ONE.add(new BigDecimal(discount_rate)).pow(years[i]), 2, RoundingMode.HALF_UP);
+            discountedFactor[i] = BigDecimal.ONE.divide(BigDecimal.ONE.add(new BigDecimal(String.valueOf(discount_rate))).pow(years[i]), 2, RoundingMode.HALF_UP);
             discountedCashFlow[i] = discountedFactor[i].multiply(netCashFlow[i]);
             if (i == 0) {
                 cumulativeCashFlow[i] = discountedCashFlow[i];
@@ -98,6 +91,7 @@ public class SensitiveAnalysisDeepWell {
         }
 
 
+        BigDecimal[][] LCOHYears = new BigDecimal[3][5];
         for (int i = 0; i < 3; i++) {
             int x;
             if (i == 0) {
@@ -122,7 +116,7 @@ public class SensitiveAnalysisDeepWell {
             BigDecimal IRR = irrValue != null ? irrValue : BigDecimal.ZERO;
 
             // Calculate P/I
-            BigDecimal PI = cumulativeCashFlow[x - 1].divide(BigDecimal.valueOf(Deep_well_CAPEX), 2, RoundingMode.HALF_UP).add(BigDecimal.ONE);
+            BigDecimal PI = cumulativeCashFlow[x - 1].divide(BigDecimal.valueOf(medium_well_CAPEX), 2, RoundingMode.HALF_UP).add(BigDecimal.ONE);
 
             // Create and add a response object
             LCOHYearResponse response = new LCOHYearResponse(
@@ -138,7 +132,12 @@ public class SensitiveAnalysisDeepWell {
         return responseList;
     }
 
-    private static BigDecimal sum(BigDecimal[] array, int startIndex, int endIndex) {
+
+
+
+
+
+        private static BigDecimal sum(BigDecimal[] array, int startIndex, int endIndex) {
         BigDecimal sum = BigDecimal.ZERO;
         for (int i = startIndex; i <= endIndex; i++) {
             sum = sum.add(array[i]);
@@ -175,4 +174,11 @@ public class SensitiveAnalysisDeepWell {
             return null;
         }
     }
+
+
+
+
+
+
 }
+

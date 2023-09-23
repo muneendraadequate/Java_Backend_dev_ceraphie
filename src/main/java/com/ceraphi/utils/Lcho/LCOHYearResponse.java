@@ -11,6 +11,7 @@ public class LCOHYearResponse {
     private BigDecimal irr;
     private BigDecimal pi;
 
+
     public LCOHYearResponse(BigDecimal year, BigDecimal lcoh, BigDecimal npv, BigDecimal irr, BigDecimal pi) {
         this.year = year;
         this.lcoh = lcoh;
@@ -19,26 +20,16 @@ public class LCOHYearResponse {
         this.pi = pi;
     }
 
-//    public LCOHYearResponse(int i, double v, double v1, double v2, double v3) {
-//        this.year = i;
-//        this.lcoh = v;
-//        this.npv = v1;
-//        this.irr = v2;
-//        this.pi = v3;
-//    }
+    public LCOHYearResponse(BigDecimal newDiscountRate, BigDecimal lcoh, BigDecimal npv) {
+    }
+
+    public LCOHYearResponse(BigDecimal newDiscountRate, BigDecimal npv) {
+    }
 
 
-//    public LCOHYearResponse(int i, double v, double v1, double v2, double v3) {
-//        this.year = i;
-//        this.lcoh = v;
-//        this.npv = v1;
-//        this.irr = v2;
-//        this.pi = v3;
-//    }
+    public LCOHYearResponse(int year, double lcoh, double npv, double irr, double pi) {
+    }
 
-//    public LCOHYearResponse(BigDecimal bigDecimal, BigDecimal lcoh, BigDecimal npv, BigDecimal bigDecimal1, BigDecimal pi) {
-//    }
-//}
 
     public BigDecimal getYear() {
         return year;

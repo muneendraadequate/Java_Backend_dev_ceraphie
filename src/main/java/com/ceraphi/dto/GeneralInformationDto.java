@@ -29,10 +29,8 @@ public class GeneralInformationDto {
     @NotEmpty(message = "postalCode is missing")
     private String postalCode;
     @NotEmpty
-    @Size(min = 5, message = "geoPoliticalData field should contains minimum 20 characters ")
     private String GeoPoliticalData;
     @NotEmpty(message = "restrictionDetails field couldn't be empty")
-    @Size(min = 5, message = "restrictionDetails field should contains minimum 20 characters ")
     private String restrictionDetails;
     @NotEmpty(message = "clientId field must have clientId")
     private String clientId;

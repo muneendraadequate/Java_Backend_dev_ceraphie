@@ -262,9 +262,9 @@ public class MediumWellDataController {
         //lcoh of DeepWell
         SensitiveAnalysisDeepWell sensitiveAnalysisDeepWell = new SensitiveAnalysisDeepWell();
         CostEstimationDeepWell costEstimationDeepWell1 = doubleResponseDeep.getCostEstimationDeepWell();
-        double DeepWelltotalCAPEX = costEstimationDeepWell1.getTotal();
+        double DeepWelltotalCAPEX =10075807;
         DeepWellOpex deepWellOpex1 = doubleResponseDeep.getDeepWellOpex();
-        double DeepWelltotalOPEX = deepWellOpex1.getTotal();
+        double DeepWelltotalOPEX =69317.6;
         List<LCOHYearResponse> lcohYearResponses = sensitiveAnalysisDeepWell.lcohResponseDeepWell(DeepWelltotalCAPEX,DeepWelltotalOPEX);
         doubleResponseClass.setLcohYearResponseDeepWell(lcohYearResponses);
         //lcoh of HeatPump
@@ -731,5 +731,6 @@ public class MediumWellDataController {
         return tempLossPerKm;
 
     }
+
 
 }

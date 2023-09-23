@@ -11,11 +11,9 @@ import java.util.List;
 
 @Component
 public class SensitiviteAnalysisHeatPump {
-//    public double medium_well_CAPEX = 2742807;
-//    public double medium_well_OPEX = 306680;
-    public double discount_rate = 0.03;
+    public double discount_rate = 0.035;
     public double selling_price = 0.11 * 1000;
-    public double productionValue = 86000;
+    public double productionValue = 8600;
     public double electrical_Price_Inflation=0.03;
 
 
