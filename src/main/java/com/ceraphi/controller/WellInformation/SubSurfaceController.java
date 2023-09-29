@@ -13,6 +13,7 @@ import javax.validation.Valid;
 import java.util.List;
 
 @RestController
+@CrossOrigin("*")
 @RequestMapping("/api")
 public class SubSurfaceController {
     private final SubSurfaceService subSurfaceService;

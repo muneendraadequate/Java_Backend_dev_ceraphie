@@ -1,5 +1,6 @@
-package com.ceraphi.utils;
+package com.ceraphi.utils.EmissionCalculator;
 
+import com.ceraphi.utils.EmissionData;
 import com.ceraphi.utils.Lcho.Current;
 import com.ceraphi.utils.Lcho.Deep;
 import com.ceraphi.utils.Lcho.Medium;
@@ -9,7 +10,6 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.DecimalFormat;
-
 
 public class EmissionCalculator {
     public static Current bau = new Current();
@@ -23,9 +23,9 @@ public class EmissionCalculator {
              Workbook workbook = new XSSFWorkbook(inputStream)) {
             Sheet sheet = workbook.getSheetAt(0); // Assuming data is on the first sheet
 
-            ElectricData electricData = null;
+         ElectricData electricData = null;
             OilData oilData = null;
-            GasData gasData = null;
+           GasData gasData = null;
 
             // Read data for Electric, Oil, and Gas
             for (int rowIndex = 1; rowIndex <= 3; rowIndex++) { // Start from 1 to skip the header row
@@ -104,114 +104,5 @@ public class EmissionCalculator {
     private static String formatToDecimal(double value) {
         DecimalFormat df = new DecimalFormat("0.00000");
         return df.format(value);
-    }
-}
-
-
-class ElectricData {
-    private double efficiency;
-    private double carbon;
-    private double nox;
-    private double noxn;
-    private double ghg;
-
-    public ElectricData(double efficiency, double carbon, double nox, double noxn, double ghg) {
-        this.efficiency = efficiency;
-        this.carbon = carbon;
-        this.nox = nox;
-        this.noxn = noxn;
-        this.ghg = ghg;
-    }
-
-    public double getEfficiency() {
-        return efficiency;
-    }
-
-    public double getCarbon() {
-        return carbon;
-    }
-
-    public double getNox() {
-        return nox;
-    }
-
-    public double getNoxn() {
-        return noxn;
-    }
-
-    public double getGhg() {
-        return ghg;
-    }
-}
-
-class OilData {
-    private double efficiency;
-    private double carbon;
-    private double nox;
-    private double noxn;
-    private double ghg;
-
-    public OilData(double efficiency, double carbon, double nox, double noxn, double ghg) {
-        this.efficiency = efficiency;
-        this.carbon = carbon;
-        this.nox = nox;
-        this.noxn = noxn;
-        this.ghg = ghg;
-    }
-
-    public double getEfficiency() {
-        return efficiency;
-    }
-
-    public double getCarbon() {
-        return carbon;
-    }
-
-    public double getNox() {
-        return nox;
-    }
-
-    public double getNoxn() {
-        return noxn;
-    }
-
-    public double getGhg() {
-        return ghg;
-    }
-}
-
-class GasData {
-    private double efficiency;
-    private double carbon;
-    private double nox;
-    private double noxn;
-    private double ghg;
-
-    public GasData(double efficiency, double carbon, double nox, double noxn, double ghg) {
-        this.efficiency = efficiency;
-        this.carbon = carbon;
-        this.nox = nox;
-        this.noxn = noxn;
-        this.ghg = ghg;
-    }
-
-    public double getEfficiency() {
-        return efficiency;
-    }
-
-    public double getCarbon() {
-        return carbon;
-    }
-
-    public double getNox() {
-        return nox;
-    }
-
-    public double getNoxn() {
-        return noxn;
-    }
-
-    public double getGhg() {
-        return ghg;
     }
 }

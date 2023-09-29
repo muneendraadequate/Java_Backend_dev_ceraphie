@@ -2,6 +2,9 @@ package com.ceraphi.utils;
 
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+
 import java.io.InputStream;
 import java.util.Iterator;
 public class WellDataLoader {
@@ -47,7 +50,9 @@ public class WellDataLoader {
                 }
 
                 if (closestSmallerIndex == -1 || closestLargerIndex == -1) {
-                    throw new IllegalArgumentException("Data not found for the specified temperature.");
+                    String errorMessage = "Data not found for the specified temperature.";
+                    WellData errorWellData = createErrorWellData(errorMessage);
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorWellData).getBody();
                 }
 
                 // Interpolate values based on the formula
@@ -87,5 +92,12 @@ public class WellDataLoader {
     private double interpolate(double x1, double x2, double y1, double y2, double requiredTemp) {
         return y1 + (requiredTemp - x1) * (y2 - y1) / (x2 - x1);
 
-    }}
+    }
+    private WellData createErrorWellData(String errorMessage) {
+        WellData errorWellData = new WellData();
+        errorWellData.setError(true);
+        errorWellData.setErrorMessage(errorMessage);
+        return errorWellData;
+    }
+}
 

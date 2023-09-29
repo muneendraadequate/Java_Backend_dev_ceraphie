@@ -58,4 +58,6 @@ public class ClientDetails {
     @Column(name = "restriction_details")
     private String restrictionDetails;
 
+    private Long userId;
+
 }

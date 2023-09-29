@@ -3,6 +3,7 @@ package com.ceraphi.controller.Calculation;
 import com.ceraphi.entities.Calculation;
 import com.ceraphi.services.WellDataService;
 import com.ceraphi.utils.*;
+import com.ceraphi.utils.EmissionCalculator.EmissionCalculator;
 import com.ceraphi.utils.Lcho.LCOHYearResponse;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -13,9 +14,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.math.BigDecimal;
-import java.math.MathContext;
-import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -24,7 +22,8 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api")
-public class MediumWellDataController {
+@CrossOrigin("*")
+public class CalculationWellsDataController {
     public static DeepWellOutPut deepWellOutPut = new DeepWellOutPut();
     public static int WELL_DELTA = 20;
     public static CostEstimationDeepWell costEstimationDeepWell = new CostEstimationDeepWell();
@@ -48,8 +47,17 @@ public class MediumWellDataController {
         //HeatPump calculation Start+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         double condenser = calculation.getCapacity_req_MW();
         double requiredTemp = calculation.getProcess_required_temp();
-        double req_temp = calculation.getProcess_required_temp(); // Specify the required temperature here
-        WellData interpolatedWellData = loader.getInterpolatedWellData("/GELData1500mwells.xlsx", req_temp);
+        double req_temp = calculation.getProcess_required_temp();// Specify the required temperature here
+        WellData interpolatedWellData = new WellData();
+        interpolatedWellData = loader.getInterpolatedWellData("/GELData1500mwells.xlsx", req_temp);
+            if(interpolatedWellData.isError()){
+//            interpolatedWellData = loader.getInterpolatedWellData("/GELData1500mwells.xlsx", req_temp);
+            ApiResponseData<?> apiResponseData = ApiResponseData.builder()
+                    .status(HttpStatus.NOT_FOUND.value())
+                    .build();
+            return ResponseEntity.ok(apiResponseData);
+        }
+
         double FLOW = interpolatedWellData.getFlowRate();
         outputCalculation.setCondenser(condenser);
         outputCalculation.setDeliverable_Temp(requiredTemp);
@@ -71,8 +79,8 @@ public class MediumWellDataController {
         outputCalculation.setEvaporator(evaporator);
         double wells = Math.round((evaporator / (interpolatedWellData.getCapacity() / 1000)));
         outputCalculation.setNo_of_wells(wells);
-        double v = wellDataService.calculatePressureDrop(FLOW, DEPTH, INTERNAL_DIAM_TUBULAR, INTERNAL_DIAM_ANNULUS, INTERNAL_DIAM_COUPLING);
-        double wellPressureDrop = v / 100;
+        double pressure = wellDataService.calculatePressureDrop(FLOW, DEPTH, INTERNAL_DIAM_TUBULAR, INTERNAL_DIAM_ANNULUS, INTERNAL_DIAM_COUPLING);
+        double wellPressureDrop =pressure / 100;
         outputCalculation.setWell_pressure_drop(wellPressureDrop);
         double pumpEfficiency = 0.75;
         double power = (FLOW) * (wellPressureDrop * 0.1);
@@ -248,7 +256,7 @@ public class MediumWellDataController {
 
 //----------------------------------------------------------------------------------------------------------
         //deepWell method calling
-        DeepWellOutPutController deepWellOutPutController = new DeepWellOutPutController();
+//        DeepWellOutPutController deepWellOutPutController = new DeepWellOutPutController();
         DoubleResponseDeep doubleResponseDeep = deepWellOutPuts(calculation);
         doubleResponseClass.setDeepWellOutPutCalculation(doubleResponseDeep.getDeepWellOutPutCalculation());
         doubleResponseClass.setCostEstimationDeepWell(doubleResponseDeep.getCostEstimationDeepWell());
@@ -260,15 +268,15 @@ public class MediumWellDataController {
         EmissionData emissionData = emissionCalculator.calculateEmissions(calculation.getCapacity_req_MW(), calculation.getMin_operational_hours(), annualConsumption, DeepWellAnnualConsumption);
         doubleResponseClass.setEmissionData(emissionData);
         //lcoh of DeepWell
-        SensitiveAnalysisDeepWell sensitiveAnalysisDeepWell = new SensitiveAnalysisDeepWell();
+        SensitivityAnalysisDeepWell sensitiveAnalysisDeepWell = new SensitivityAnalysisDeepWell();
         CostEstimationDeepWell costEstimationDeepWell1 = doubleResponseDeep.getCostEstimationDeepWell();
-        double DeepWelltotalCAPEX =10075807;
+        double DeepWelltotalCAPEX = costEstimationDeepWell1.getTotal();
         DeepWellOpex deepWellOpex1 = doubleResponseDeep.getDeepWellOpex();
-        double DeepWelltotalOPEX =69317.6;
+        double DeepWelltotalOPEX = deepWellOpex1.getTotal();
         List<LCOHYearResponse> lcohYearResponses = sensitiveAnalysisDeepWell.lcohResponseDeepWell(DeepWelltotalCAPEX,DeepWelltotalOPEX);
         doubleResponseClass.setLcohYearResponseDeepWell(lcohYearResponses);
         //lcoh of HeatPump
-        SensitiviteAnalysisHeatPump sensitiveAnalysisHeatPump = new SensitiviteAnalysisHeatPump();
+        SensitivityAnalysisHeatPump sensitiveAnalysisHeatPump = new SensitivityAnalysisHeatPump();
         List<LCOHYearResponse> lcohYearResponses1 = sensitiveAnalysisHeatPump.lcohResponseHeatPump(totalCAPEXmedium, totalOpex);
         doubleResponseClass.setLcohYearResponseHeatPumpWell(lcohYearResponses1);
         ApiResponseData<?> apiResponseData = ApiResponseData.builder()
@@ -320,12 +328,14 @@ public class MediumWellDataController {
 
 
         //step 5:----------------------------------------------------------------
-        double flow = DeepWellFlowRate * noOfWells;
-        PressureData pressureData = wellDataService.calculateBoostPumpPowerForDeepWell(flow, noOfWells, calculation.getNetwork_length());
-        deepWellOutPut.setDelivery_pressure_loss(pressureData.getPressure());
-        deepWellOutPut.setReturn_Pressure_loss(pressureData.getPressure());
+        double flow = wellFlowRate * noOfWells;
+        double pressureData = wellDataService.calculateBoostPumpPower(flow, calculation.getNetwork_length(),noOfWells);
+        System.out.println();
+
+        deepWellOutPut.setDelivery_pressure_loss(pressureData);
+        deepWellOutPut.setReturn_Pressure_loss(pressureData);
         // Calculate boost pump power without efficiency
-        double boostPumpPower = (pressureData.getPressure() + pressureData.getPressure()) * 0.1 * wellFlowRate * noOfWells * networkLength;
+        double boostPumpPower = (pressureData + pressureData) * 0.1 * wellFlowRate * noOfWells * networkLength;
         // Adjust boost pump power for efficiency
         double boostPumpEfficiency = 0.75;
         double BoostPumpPower = boostPumpPower / boostPumpEfficiency;
@@ -333,7 +343,7 @@ public class MediumWellDataController {
 
 
         //step 6:---------------------------------------------------------------
-        double ID = pressureData.getInternalDiameter();
+        double ID =73.1;
         double ambientTemp = calculation.getAmbient_temperature();
         double tempLossPerKM = calculateTempLossFromHEXAndDeliveryPipe(ambientTemp, ID, flow, wellOutletTemp);
         deepWellOutPut.setDelivery_temp_loss(tempLossPerKM);
@@ -545,7 +555,7 @@ public class MediumWellDataController {
         double closestValue = 0;
         List<ExcelColumns> newTable = new ArrayList<>();
 
-        try (InputStream inputStream = getClass().getResourceAsStream("/demo.xlsx");
+        try (InputStream inputStream = getClass().getResourceAsStream("/proDataBase.xlsx");
              Workbook workbook = new XSSFWorkbook(inputStream)) {
             Sheet sheet = workbook.getSheetAt(0);
 
@@ -593,7 +603,7 @@ public class MediumWellDataController {
         // Loop through the filtered table and apply conditions
         for (ExcelColumns entry : filteredTable) {
             // Remove rows where steady state temp is less than minWellOutletTemp
-            if (entry.getSteadyStateTemp() >= minWellOutletTemp) {
+            if (entry.getSteadyStateTemp() > minWellOutletTemp) {
                 // Remove rows where flow rate is not equal to Deepwellflowrate
                 if (entry.getFlowRate() == Deepwellflowrate) {
                     // Remove rows where delta T is not equal to well delta
@@ -629,79 +639,7 @@ public class MediumWellDataController {
     }
 
 
-    public DeepWellOutPutController.PressureResult calculateBoostPressureDrops(double deepWellFlowRate) {
-        int[] array1 = new int[20];
-        for (int i = 0; i < 20; i++) {
-            array1[i] = i + 1;
-        }
-        double[] array2 = new double[20];
-        double internalDiam = 0.0; // Initialize internalDiam
-        for (int i = 0; i < array1.length; i++) {
-            int x = array1[i];
-            internalDiam = x * 0.025;
-            double roughness = 0.02 / 100000;
-            double kinematicViscosity = 1.004e-6;
-            double density = 997; // DENSITY
-            double k = roughness / internalDiam;
 
-            double velocity = (deepWellFlowRate / 1e3) / (Math.PI * Math.pow(internalDiam / 2, 2));
-            double r = velocity * internalDiam / kinematicViscosity;
-
-            double x1 = k * r * (Math.log(10) / 18.574);
-            double x2 = Math.log(r * (Math.log(10) / 5.02));
-            double f = x2 - 0.2;
-
-            double e = (Math.log(x1 + f) - 0.2) / (1 + x1 + f);
-            f = f - (1 + x1 + f + 0.5 * e) * e * (x1 + f) / (1 + x1 + f + e * (1 + e / 3));
-            e = (Math.log(x1 + f) + f - x2) / (1 + x1 + f);
-            f = f - (1 + x1 + f + 0.5 * e) * e * (x1 + f) / (1 + x1 + f + e * (1 + e / 3));
-            f = 0.5 * Math.log(10) / f;
-            f = f * f;
-            double darcyFF = f;
-
-            double pressure = (darcyFF * (1000 / internalDiam) * (Math.pow(velocity, 2) * density / 2)) / (1e5);
-
-            array2[i] = pressure;
-        }
-
-        int index = -1;
-        for (int i = 0; i < array2.length - 1; i++) {
-            if (Math.abs(array2[i] - array2[i + 1]) < 10) {
-                index = i;
-                break;
-            }
-        }
-        if (index == -1) {
-            index = array2.length - 1;
-        }
-
-        double deliveryPressureLoss = array2[index];
-
-        // Return the internal diameter and pressure as a pair
-        return
-                new DeepWellOutPutController.PressureResult(internalDiam, deliveryPressureLoss);
-    }
-
-
-    class PressureResult {
-        private double pressure;
-        private double internalDiam;
-
-        public PressureResult(double internalDiam, double pressure) {
-            this.internalDiam = internalDiam;
-            this.pressure = pressure;
-        }
-
-        public double getInternalDiam() {
-            return internalDiam;
-        }
-
-        public double getPressure() {
-            return pressure;
-        }
-
-
-    }
 
     public double calculateTempLossFromHEXAndDeliveryPipe(double ambientTemp, double internalDiameter, double flow, double tempIn) {
         double Thermal_Conductivity_pipe = 0.0244;

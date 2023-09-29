@@ -1,7 +1,9 @@
 package com.ceraphi.controller.Calculation;
 
+import com.ceraphi.utils.ApiResponseData;
 import com.ceraphi.utils.ForSpiderCharts.*;
 import com.ceraphi.utils.Lcho.LCOHYearResponse;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,69 +14,76 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api")
+@CrossOrigin("*")
 public class SpiderCharts {
-    @GetMapping("/WellsCharts")
-    public ResponseEntity<List<WellChartResponse>> ChartDataForDeepWell( @RequestParam double WellCapex,
+    @GetMapping("/WellCharts")
+    public ResponseEntity<?> ChartDataForDeepWell( @RequestParam double WellCapex,
                                                                      @RequestParam double WellOpex) {
+        if (WellCapex <= 0 || WellOpex <= 0) {
+            ApiResponseData apiResponseData = new ApiResponseData();
+            apiResponseData.setStatus(HttpStatus.NOT_FOUND.value());
+            return ResponseEntity.ok(apiResponseData);
+        }
+    List<Integer> percentages = new ArrayList<>();
+    BigDecimal change = new BigDecimal("-0.50");
+    BigDecimal step = new BigDecimal("0.10");
 
+    while (change.compareTo(new BigDecimal("0.51")) <= 0) {
+        int percentage = (int) (change.doubleValue() * 100);
+        percentages.add(percentage);
+        change = change.add(step);
+    }
 
-        List<Integer> percentages = new ArrayList<>();
-        BigDecimal change = new BigDecimal("-0.50");
-        BigDecimal step = new BigDecimal("0.10");
+    BigDecimal originalDiscountRate = new BigDecimal("3.5");
+    BigDecimal[] newDiscountRates = new BigDecimal[percentages.size()];
 
-        while (change.compareTo(new BigDecimal("0.51")) <= 0) {
-            int percentage = (int) (change.doubleValue() * 100);
-            percentages.add(percentage);
-            change = change.add(step);
+    for (int i = 0; i < percentages.size(); i++) {
+        int percentage = percentages.get(i);
+        BigDecimal percentageBigDecimal = new BigDecimal(percentage);
+        BigDecimal newDiscountRate = originalDiscountRate.add(originalDiscountRate.multiply(percentageBigDecimal.divide(new BigDecimal(100))));
+        newDiscountRates[i] = newDiscountRate;
+    }
+
+    FindDiscountRates findDiscountRates = new FindDiscountRates();
+    List<DiscountRateResponse> responseList = new ArrayList<>();
+
+    WellChartResponse WellChartResponse = null;
+    for (int i = 0; i < newDiscountRates.length; i++) {
+        BigDecimal discountRate = newDiscountRates[i];
+        findDiscountRates.discount_rate = discountRate.divide(new BigDecimal(100));
+        List<LCOHYearResponse> lcohYearResponses = findDiscountRates.lcohResponseHeatPump(WellCapex, WellOpex);
+
+        BigDecimal totalNpv = BigDecimal.ZERO;
+        for (LCOHYearResponse response : lcohYearResponses) {
+            BigDecimal npv = response.getNpv();
+            totalNpv = totalNpv.add(npv);
         }
 
-        BigDecimal originalDiscountRate = new BigDecimal("3.5");
-        BigDecimal[] newDiscountRates = new BigDecimal[percentages.size()];
+        // Create a DiscountRateResponse object and add it to the response list
+        DiscountRateResponse discountRateResponse = new DiscountRateResponse();
+        discountRateResponse.setPercentage(percentages.get(i));
+        discountRateResponse.setDiscountRate(newDiscountRates[i]);
+        discountRateResponse.setNPV(totalNpv);
+        responseList.add(discountRateResponse);
+        //===================Opex===========================
+        List<OpexChartResponse> opexChartResponses = opexDiscountRates(WellOpex, WellCapex);
+        List<CapexChartResponse> capexChartResponses = capexDiscountRates(WellCapex, WellOpex);
+        List<HeatChartResponse> heatChartResponses = heatSellingPrice(WellOpex, WellCapex);
+        WellChartResponse = new WellChartResponse();
+        WellChartResponse.setDiscountRateResponse(responseList);
+        WellChartResponse.setOpexChartResponse(opexChartResponses);
+        WellChartResponse.setCapexChartResponses(capexChartResponses);
+        WellChartResponse.setHeatChartResponses(heatChartResponses);
 
-        for (int i = 0; i < percentages.size(); i++) {
-            int percentage = percentages.get(i);
-            BigDecimal percentageBigDecimal = new BigDecimal(percentage);
-            BigDecimal newDiscountRate = originalDiscountRate.add(originalDiscountRate.multiply(percentageBigDecimal.divide(new BigDecimal(100))));
-            newDiscountRates[i] = newDiscountRate;
-        }
+        //============================capex===========================
 
-        FindDiscountRates findDiscountRates = new FindDiscountRates();
-        List<DiscountRateResponse> responseList = new ArrayList<>();
+    }
+    ApiResponseData<?> apiResponseData = ApiResponseData.builder()
+            .status(HttpStatus.OK.value())
+            .data(WellChartResponse)
+            .build();
+    return ResponseEntity.ok(apiResponseData);
 
-        WellChartResponse WellChartResponse = null;
-        for (int i = 0; i < newDiscountRates.length; i++) {
-            BigDecimal discountRate = newDiscountRates[i];
-            findDiscountRates.discount_rate = discountRate.divide(new BigDecimal(100));
-            List<LCOHYearResponse> lcohYearResponses = findDiscountRates.lcohResponseHeatPump(WellCapex, WellOpex);
-
-            BigDecimal totalNpv = BigDecimal.ZERO;
-            for (LCOHYearResponse response : lcohYearResponses) {
-                BigDecimal npv = response.getNpv();
-                totalNpv = totalNpv.add(npv);
-            }
-
-            // Create a DiscountRateResponse object and add it to the response list
-            DiscountRateResponse discountRateResponse = new DiscountRateResponse();
-            discountRateResponse.setPercentage(percentages.get(i));
-            discountRateResponse.setDiscountRate(newDiscountRates[i]);
-            discountRateResponse.setNPV(totalNpv);
-            responseList.add(discountRateResponse);
-            //===================Opex===========================
-            List<OpexChartResponse> opexChartResponses = opexDiscountRates(WellOpex, WellCapex);
-            List<CapexChartResponse> capexChartResponses = capexDiscountRates(WellCapex, WellOpex);
-            List<HeatChartResponse> heatChartResponses = heatSellingPrice(WellOpex, WellCapex);
-            WellChartResponse = new WellChartResponse();
-            WellChartResponse.setDiscountRateResponse(responseList);
-            WellChartResponse.setOpexChartResponse(opexChartResponses);
-            WellChartResponse.setCapexChartResponses(capexChartResponses);
-            WellChartResponse.setHeatChartResponses(heatChartResponses);
-
-            //============================capex===========================
-
-        }
-
-        // Return the list of DiscountRateResponse objects as a ResponseEntity
-        return ResponseEntity.ok(Collections.singletonList(WellChartResponse));
     }
     public static List<OpexChartResponse> opexDiscountRates(double WellOpex,  double WellCapex) {
         List<Integer> percentages = new ArrayList<>();

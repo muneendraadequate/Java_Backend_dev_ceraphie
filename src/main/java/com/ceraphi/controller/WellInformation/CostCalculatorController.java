@@ -24,6 +24,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api")
+@CrossOrigin("*")
 public class CostCalculatorController {
     private CostCalculatorService costCalculatorService;
 

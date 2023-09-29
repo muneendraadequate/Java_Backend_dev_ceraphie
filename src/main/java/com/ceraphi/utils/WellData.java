@@ -20,5 +20,7 @@ public class WellData {
     private Double WellPressureDrop;
     private Double WellPumpPower;
    private Double WellInletTemp;
-            private Double NoOfWells;
+    private boolean isError;
+    private String errorMessage;
+
 }

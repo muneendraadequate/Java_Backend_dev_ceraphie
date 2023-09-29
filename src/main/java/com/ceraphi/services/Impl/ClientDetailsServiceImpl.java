@@ -4,6 +4,7 @@ import ch.qos.logback.core.net.server.Client;
 import com.ceraphi.dto.ClientDetailsDTO;
 import com.ceraphi.dto.GeneralInformationDto;
 import com.ceraphi.entities.GeneralInformation;
+import com.ceraphi.repository.UserRepository;
 import com.ceraphi.utils.ApiResponseData;
 import com.ceraphi.utils.ClientResponse;
 import com.ceraphi.entities.ClientDetails;
@@ -23,6 +24,7 @@ import org.springframework.stereotype.Service;
 import javax.transaction.Transaction;
 import javax.transaction.Transactional;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -32,20 +34,17 @@ import java.util.stream.Collectors;
 public class ClientDetailsServiceImpl implements ClientDetailsService {
     private final ClientDetailsRepository clientDetailsRepository;
     private final ModelMapper modelMapper;
+   private final  UserRepository userRepository;
 
-    public ClientDetailsServiceImpl(ClientDetailsRepository clientDetailsRepository, ModelMapper modelMapper) {
+    public ClientDetailsServiceImpl( UserRepository userRepository,ClientDetailsRepository clientDetailsRepository, ModelMapper modelMapper) {
         this.clientDetailsRepository = clientDetailsRepository;
         this.modelMapper = modelMapper;
+        this.userRepository = userRepository;
     }
 
-    //
+
     @Override
     public ClientDetailsDTO saveClientDetails(ClientDetailsDTO clientDetailsDto) {
-        String email = clientDetailsDto.getEmail();
-        // Check if email already exists
-        if (clientDetailsRepository.existsByEmail(email)) {
-            throw new IllegalArgumentException("Email already exists");
-        }
         // Continue with client creation
         ClientDetails clientDetails = modelMapper.map(clientDetailsDto, ClientDetails.class);
         ClientDetails savedClientDetails = clientDetailsRepository.save(clientDetails);
@@ -53,6 +52,31 @@ public class ClientDetailsServiceImpl implements ClientDetailsService {
         mapDto.setClientKey(savedClientDetails.getId());
         return mapDto;
     }
+//    @Override
+//    public ApiResponseData<ClientDetailsDTO> saveClientDetails(ClientDetailsDTO clientDetailsDto) {
+//        String email = clientDetailsDto.getEmail();
+//
+//        // Check if email already exists
+//        if (clientDetailsRepository.existsByEmail(email)) {
+//            // Email is already taken, return a response indicating that
+//            return ApiResponseData.<ClientDetailsDTO>builder()
+//                    .status(HttpStatus.BAD_REQUEST.value())
+//                    .message("Email already exists")
+//                    .build();
+//        }
+//
+//        // Continue with client creation
+//        ClientDetails clientDetails = modelMapper.map(clientDetailsDto, ClientDetails.class);
+//        ClientDetails savedClientDetails = clientDetailsRepository.save(clientDetails);
+//        ClientDetailsDTO mapDto = modelMapper.map(savedClientDetails, ClientDetailsDTO.class);
+//        mapDto.setClientKey(savedClientDetails.getId());
+//
+//        return ApiResponseData.<ClientDetailsDTO>builder()
+//                .status(HttpStatus.OK.value())
+//                .data(mapDto)
+//                .message("Client data saved successfully")
+//                .build();
+//    }
 
     @Override
     public ClientDetailsDTO updateClientDetails(Long clientId, ClientDetailsDTO updatedClientDetailsDTO) {
@@ -80,12 +104,21 @@ public class ClientDetailsServiceImpl implements ClientDetailsService {
 
         }
     @Override
-    public ClientDetailsDTO getClientDetails(Long clientId) {
-        ClientDetails clientDetails;
-            clientDetails = clientDetailsRepository.findById(clientId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Client details not found", "id", clientId));
-        ClientDetailsDTO map = modelMapper.map(clientDetails, ClientDetailsDTO.class);
-        return map;
+    public List<ClientDetailsDTO> getClientDetails(Long clientId) {
+        List<ClientDetails> clientDetails = clientDetailsRepository.findAllByUserId(clientId);
+        List<ClientDetailsDTO> clients = clientDetails.stream()
+                .map(s ->mapToDto(s))
+                .collect(Collectors.toList());
+        return clients;
+    }
+    @Override
+    public ClientDetailsDTO getClientDetailsById(Long clientId) {
+
+        Optional<ClientDetails> byId = clientDetailsRepository.findById(clientId);
+        ClientDetails clientDetails = byId.get();
+
+        ClientDetailsDTO clientDetailsDTO = modelMapper.map(clientDetails, ClientDetailsDTO.class);
+        return clientDetailsDTO;
     }
 
 
@@ -157,6 +190,7 @@ public class ClientDetailsServiceImpl implements ClientDetailsService {
 
     public ClientDetailsDTO mapToDto(ClientDetails clientDetails) {
         ClientDetailsDTO clientDetailsDTO = modelMapper.map(clientDetails, ClientDetailsDTO.class);
+
         clientDetailsDTO.setClientKey(clientDetails.getId());
         return clientDetailsDTO;
     }

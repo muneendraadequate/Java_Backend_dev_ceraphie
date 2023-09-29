@@ -10,7 +10,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @Component
-public class SensitiviteAnalysisHeatPump {
+public class SensitivityAnalysisHeatPump {
     public double discount_rate = 0.035;
     public double selling_price = 0.11 * 1000;
     public double productionValue = 8600;

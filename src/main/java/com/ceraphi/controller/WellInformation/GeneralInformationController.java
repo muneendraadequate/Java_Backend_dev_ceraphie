@@ -16,6 +16,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api")
+@CrossOrigin("*")
 public class GeneralInformationController {
     private GeneralInfoServices generalInfoServices;
 
@@ -38,6 +39,8 @@ public class GeneralInformationController {
                 return ResponseEntity.ok(apiResponseData);
             } else if (apiResponseData.getStatus() == HttpStatus.NOT_FOUND.value()) {
                 return ResponseEntity.notFound().build();
+            } else if (apiResponseData.getStatus() == HttpStatus.ALREADY_REPORTED.value()) {
+                return ResponseEntity.ok(apiResponseData);
             } else {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(apiResponseData);
             }

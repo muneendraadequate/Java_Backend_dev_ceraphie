@@ -14,7 +14,7 @@ import java.util.List;
 @Component
 
 
-public class SensitiveAnalysisDeepWell {
+public class SensitivityAnalysisDeepWell {
 
     public double discount_rate = 0.03;
     public double selling_price = 0.11 * 1000;

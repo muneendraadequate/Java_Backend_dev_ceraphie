@@ -10,11 +10,12 @@ import org.springframework.data.domain.PageRequest;
 import java.util.List;
 
 public interface ClientDetailsService {
-    ClientDetailsDTO saveClientDetails(ClientDetailsDTO clientDetailsDTO);
+  ClientDetailsDTO saveClientDetails(ClientDetailsDTO clientDetailsDTO);
 
     ClientDetailsDTO updateClientDetails(Long clientId, ClientDetailsDTO updatedClientDetailsDTO);
 
-  ClientDetailsDTO getClientDetails(Long clientId);
+  List<ClientDetailsDTO> getClientDetails(Long clientId);
+  ClientDetailsDTO getClientDetailsById(Long clientId);
 
     ClientResponse getAllClients(int pageNo, int pageSize, String sortBy, String sortDir);
 

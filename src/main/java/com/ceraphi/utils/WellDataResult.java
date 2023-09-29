@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class WellDataResult {
-    private  double WellInletTemp;
+  private double WellInletTemp;
   private double  NumberOfWells;
   private double WellDepthTVD;
   private double BottomHoleTemp;
