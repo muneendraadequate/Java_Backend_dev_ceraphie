@@ -2,8 +2,11 @@ package com.ceraphi.controller.WellInformation;
 
 import com.ceraphi.dto.CostCalculatorDto;
 import com.ceraphi.dto.GeneralInformationDto;
+import com.ceraphi.entities.ClientDetails;
+import com.ceraphi.repository.ClientDetailsRepository;
 import com.ceraphi.services.GeneralInfoServices;
 import com.ceraphi.utils.ApiResponseData;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -12,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
 
 import java.util.List;
+import java.util.Optional;
 
 
 @RestController
@@ -19,6 +23,9 @@ import java.util.List;
 @CrossOrigin("*")
 public class GeneralInformationController {
     private GeneralInfoServices generalInfoServices;
+    @Autowired
+    private ClientDetailsRepository clientDetailsRepository;
+
 
     public GeneralInformationController(GeneralInfoServices generalInfoService) {
         this.generalInfoServices = generalInfoService;
@@ -31,14 +38,17 @@ public class GeneralInformationController {
         if (result.hasErrors()) {
             ApiResponseData apiResponseData1 = new ApiResponseData();
             List fieldErrors = apiResponseData1.getFieldErrors(result);
+
+
             ApiResponseData<CostCalculatorDto> apiResponseData = new ApiResponseData<>(null, fieldErrors, HttpStatus.BAD_REQUEST.value(), "Validation error", null);
             return ResponseEntity.badRequest().body(apiResponseData);
-        } else {
+    } else {
+
             ApiResponseData<GeneralInformationDto> apiResponseData = generalInfoServices.saveGeneralInformation(generalInformation);
             if (apiResponseData.getStatus() == HttpStatus.OK.value()) {
                 return ResponseEntity.ok(apiResponseData);
             } else if (apiResponseData.getStatus() == HttpStatus.NOT_FOUND.value()) {
-                return ResponseEntity.notFound().build();
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiResponseData);
             } else if (apiResponseData.getStatus() == HttpStatus.ALREADY_REPORTED.value()) {
                 return ResponseEntity.ok(apiResponseData);
             } else {

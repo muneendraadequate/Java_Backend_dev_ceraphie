@@ -1,6 +1,5 @@
 package com.ceraphi.controller.UkMapController;
 
-import com.ceraphi.entities.GeneralInformation;
 import com.ceraphi.services.UkMapService;
 import com.ceraphi.utils.UkWells.Wells;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,9 +26,6 @@ if(ukwells.isEmpty()){
 }      else {
     return ResponseEntity.status(HttpStatus.OK).body(ukwells);
 }
-
-
-
 
     }
 }

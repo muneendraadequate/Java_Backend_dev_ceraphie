@@ -1,28 +1,19 @@
 package com.ceraphi.services.Impl;
-
-import com.ceraphi.dto.CostCalculatorDto;
-import com.ceraphi.dto.SurfaceEquipmentDto;
 import com.ceraphi.dto.WellDto;
 import com.ceraphi.dto.WellInfoDto;
 import com.ceraphi.entities.GeneralInformation;
-import com.ceraphi.entities.SurfaceEquipment;
 import com.ceraphi.entities.WellDetails;
 import com.ceraphi.entities.WellInformation;
 import com.ceraphi.exceptions.ResourceNotFoundException;
 import com.ceraphi.repository.*;
 import com.ceraphi.services.WellService;
 import com.ceraphi.utils.ApiResponseData;
-import io.swagger.annotations.Api;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-
-import javax.persistence.EntityNotFoundException;
 import javax.transaction.Transactional;
-import javax.validation.constraints.NotEmpty;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;

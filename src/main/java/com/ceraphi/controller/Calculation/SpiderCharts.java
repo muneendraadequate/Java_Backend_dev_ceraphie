@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 @RestController
@@ -17,8 +16,7 @@ import java.util.List;
 @CrossOrigin("*")
 public class SpiderCharts {
     @GetMapping("/WellCharts")
-    public ResponseEntity<?> ChartDataForDeepWell( @RequestParam double WellCapex,
-                                                                     @RequestParam double WellOpex) {
+    public ResponseEntity<?> ChartDataForDeepWell( @RequestParam double WellCapex,@RequestParam double WellOpex) {
         if (WellCapex <= 0 || WellOpex <= 0) {
             ApiResponseData apiResponseData = new ApiResponseData();
             apiResponseData.setStatus(HttpStatus.NOT_FOUND.value());

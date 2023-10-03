@@ -23,10 +23,7 @@ import org.springframework.stereotype.Service;
 
 import javax.transaction.Transaction;
 import javax.transaction.Transactional;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -106,9 +103,14 @@ public class ClientDetailsServiceImpl implements ClientDetailsService {
     @Override
     public List<ClientDetailsDTO> getClientDetails(Long clientId) {
         List<ClientDetails> clientDetails = clientDetailsRepository.findAllByUserId(clientId);
+
+        // Sort the list in descending order by a specific field (e.g., id)
+        clientDetails.sort(Comparator.comparingLong(ClientDetails::getId).reversed());
+
         List<ClientDetailsDTO> clients = clientDetails.stream()
-                .map(s ->mapToDto(s))
+                .map(s -> mapToDto(s))
                 .collect(Collectors.toList());
+
         return clients;
     }
     @Override

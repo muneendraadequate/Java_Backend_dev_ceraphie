@@ -19,4 +19,5 @@ public interface ClientDetailsRepository extends JpaRepository<ClientDetails, Lo
     List<ClientDetails> searchPosts(@Param("searchTerm") String searchTerm);
 
     boolean existsByEmail(String email);
+    List<ClientDetails> findByClientIdIn(List<Long> clientIds);
 }

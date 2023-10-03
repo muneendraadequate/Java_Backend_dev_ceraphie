@@ -15,6 +15,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.io.UnsupportedEncodingException;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
@@ -198,6 +201,18 @@ public class AuthController {
         } else {
             long userId = user.getId();
             String encryptedText = encrypt(String.valueOf(userId), "chandan");
+            try
+            {
+                encryptedText = URLEncoder.encode(encryptedText, "UTF-8");
+            }
+            catch (UnsupportedEncodingException e)
+            {
+                AuthResponse<?> apiResponseData = AuthResponse.builder()
+                        .status(HttpStatus.LENGTH_REQUIRED.value())
+                        .message("Failed to generate reset link")
+                        .build();
+                return ResponseEntity.ok(apiResponseData);
+            }
             String resetLink = "http://ceraphi.adequateshop.com/verification?userId=" + encryptedText;
             this.emailService.sendResetPasswordEmail(user.getUsername(), resetLink,"Here you can reset your password");
             AuthResponse<?> apiResponseData = AuthResponse.builder()
@@ -207,8 +222,6 @@ public class AuthController {
             return ResponseEntity.ok(apiResponseData);
         }
     }
-
-
 
     @PutMapping("/reset")
     public ResponseEntity<?> resetUserPassword(@RequestBody PasswordResetRequest request) {
@@ -252,10 +265,6 @@ public class AuthController {
             return ResponseEntity.ok(apiResponseData);
         }
     }
-
-
-
-
 
 }
 
