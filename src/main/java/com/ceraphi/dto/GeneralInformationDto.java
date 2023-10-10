@@ -4,8 +4,6 @@ import com.ceraphi.utils.Status;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import net.bytebuddy.implementation.bind.annotation.Empty;
-
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.Size;
 
@@ -22,7 +20,6 @@ public class GeneralInformationDto {
     private String country;
     @NotEmpty(message = "preferredUnits field couldn't  be empty")
     private String preferredUnits;
-    @NotEmpty(message = "clientName field couldn't be empty ")
     private String clientName;
     @NotEmpty(message = "select the city")
     private String city;

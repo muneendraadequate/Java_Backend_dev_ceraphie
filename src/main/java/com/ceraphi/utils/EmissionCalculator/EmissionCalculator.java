@@ -18,7 +18,7 @@ public class EmissionCalculator {
 
     public EmissionData calculateEmissions(double requiredCapacity, double loadHours, double annualConsumptionMediumWell, double annualConsumptionDeepWell) throws IOException {
 
-
+        DecimalFormat decimalFormat = new DecimalFormat("#.#");
         try (InputStream inputStream = EmissionCalculator.class.getResourceAsStream("/HeatLoadFuels.xlsx");
              Workbook workbook = new XSSFWorkbook(inputStream)) {
             Sheet sheet = workbook.getSheetAt(0); // Assuming data is on the first sheet
@@ -53,27 +53,27 @@ public class EmissionCalculator {
             // Check if any of the data is null before using it
             if (electricData != null) {
 
-                bau.setCarbon(requiredCapacity * gasData.getCarbon() * loadHours / gasData.getEfficiency());
-                bau.setNox(requiredCapacity * gasData.getNox() * loadHours / gasData.getEfficiency());
-                bau.setNoxn(requiredCapacity * gasData.getNoxn() * loadHours / gasData.getEfficiency());
-                bau.setGhg(requiredCapacity * electricData.getGhg() * loadHours / gasData.getEfficiency());
+                bau.setCarbon(Double.parseDouble(decimalFormat.format(requiredCapacity * gasData.getCarbon() * loadHours / gasData.getEfficiency())));
+                bau.setNox(Double.parseDouble(decimalFormat.format(requiredCapacity * gasData.getNox() * loadHours / gasData.getEfficiency())));
+                bau.setNoxn(Double.parseDouble(decimalFormat.format(requiredCapacity * gasData.getNoxn() * loadHours / gasData.getEfficiency())));
+                bau.setGhg(Double.parseDouble(decimalFormat.format(requiredCapacity * electricData.getGhg() * loadHours / gasData.getEfficiency())));
 
             }
             if (oilData != null) {
 
-                medium.setCarbon(annualConsumptionMediumWell * electricData.getCarbon());
-                medium.setNox(annualConsumptionMediumWell * electricData.getNox());
-                medium.setNoxn(annualConsumptionMediumWell * electricData.getNoxn());
-                medium.setGhg(annualConsumptionMediumWell * electricData.getGhg());
+                medium.setCarbon(Double.parseDouble(decimalFormat.format(annualConsumptionMediumWell * electricData.getCarbon())));
+                medium.setNox(Double.parseDouble(decimalFormat.format(annualConsumptionMediumWell * electricData.getNox())));
+                medium.setNoxn(Double.parseDouble(decimalFormat.format(annualConsumptionMediumWell * electricData.getNoxn())));
+                medium.setGhg(Double.parseDouble(decimalFormat.format(annualConsumptionMediumWell * electricData.getGhg())));
 
 
             }
             if (gasData != null) {
 
-                deep.setCarbon(annualConsumptionDeepWell * electricData.getCarbon());
-                deep.setNox(annualConsumptionDeepWell * electricData.getNox());
-                deep.setNoxn(annualConsumptionDeepWell * electricData.getNoxn());
-                deep.setGhg(annualConsumptionDeepWell * electricData.getGhg());
+                deep.setCarbon(Double.parseDouble(decimalFormat.format(annualConsumptionDeepWell * electricData.getCarbon())));
+                deep.setNox(Double.parseDouble(decimalFormat.format(annualConsumptionDeepWell * electricData.getNox())));
+                deep.setNoxn(Double.parseDouble(decimalFormat.format(annualConsumptionDeepWell * electricData.getNoxn())));
+                deep.setGhg(Double.parseDouble(decimalFormat.format(annualConsumptionDeepWell * electricData.getGhg())));
 
             }
         } catch (IOException e) {
@@ -101,8 +101,5 @@ public class EmissionCalculator {
         return 0.0; // Default value for non-numeric cell types
     }
 
-    private static String formatToDecimal(double value) {
-        DecimalFormat df = new DecimalFormat("0.00000");
-        return df.format(value);
-    }
+
 }

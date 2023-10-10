@@ -20,7 +20,6 @@ public class ClientDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     @Column(name = "client_name")
     private String clientName;
     @Column(nullable = false, columnDefinition = "bit default false")
@@ -57,7 +56,7 @@ public class ClientDetails {
 
     @Column(name = "restriction_details")
     private String restrictionDetails;
-
-    private Long userId;
-
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
 }

@@ -52,6 +52,7 @@ public class WellDataCalculationImpl implements  WellDataService {
     }
 
 
+
     private double interpolateValues(double y1, double y2, double frac) {
         return y1 + frac * (y2 - y1);
     }
@@ -94,52 +95,51 @@ public class WellDataCalculationImpl implements  WellDataService {
 
 
 
-//    @Override
-//    public PressureData calculateBoostPumpPowerForDeepWell(double flowRate, double numberOfWells,double networkLength) {
-//
-//        List<Double> pressureValues = new ArrayList<>();
-//
-//        double pipeDiameter = 0;
-//        for (int x = 1; x <= 20; x++) {
-//            double internalDiam = x * 0.025;
-//            double roughness = 0.02 / 100000;
-//            double kinematicViscosity = KINEMATIC_VISCOSITY;
-//            double density = DENSITY;
-//            pipeDiameter = internalDiam;
-//            double k = roughness / internalDiam;
-//
-//            double velocity = (flowRate / 1000) / (Math.PI * Math.pow(internalDiam / 2, 2));
-//            double r = velocity * internalDiam / kinematicViscosity;
-//
-//            double x1 = k * r * (Math.log(10) / 18.574);
-//            double x2 = Math.log(r * (Math.log(10) / 5.02));
-//            double f = x2 - 0.2;
-//
-//            double e = (Math.log(x1 + f) - 0.2) / (1 + x1 + f);
-//            f = f - (1 + x1 + f + 0.5 * e) * e * (x1 + f) / (1 + x1 + f + e * (1 + e / 3));
-//            e = (Math.log(x1 + f) + f - x2) / (1 + x1 + f);
-//            f = f - (1 + x1 + f + 0.5 * e) * e * (x1 + f) / (1 + x1 + f + e * (1 + e / 3));
-//            f = 0.5 * Math.log(10) / f;
-//            f = f * f;
-//            double darcyFF = f;
-//
-//            double pressure = (darcyFF * (1000 / internalDiam) * (Math.pow(velocity, 2) * density / 2)) / (1e5);
-//
-//            pressureValues.add(pressure);
-//            System.out.println();
-//        }
-//        int i = findIndex(pressureValues);
-//        PressureData pressureData = new PressureData();
-//        pressureData.setPressure(pressureValues.get(i) * networkLength);
-//        pressureData.setInternalDiameter(pipeDiameter);
-//        return pressureData;
-//
-//
-//    }
+    @Override
+    public PressureData calculateBoostPumpPowerForDeepWell(double flowRate, double numberOfWells,double networkLength) {
+
+        List<Double> pressureValues = new ArrayList<>();
+
+        double pipeDiameter = 0;
+        for (int x = 1; x <= 20; x++) {
+            double internalDiam = x * 0.025;
+            double roughness = 0.02 / 100000;
+            double kinematicViscosity = KINEMATIC_VISCOSITY;
+            double density = DENSITY;
+            pipeDiameter = internalDiam;
+            double k = roughness / internalDiam;
+
+            double velocity = (flowRate / 1000) / (Math.PI * Math.pow(internalDiam / 2, 2));
+            double r = velocity * internalDiam / kinematicViscosity;
+
+            double x1 = k * r * (Math.log(10) / 18.574);
+            double x2 = Math.log(r * (Math.log(10) / 5.02));
+            double f = x2 - 0.2;
+
+            double e = (Math.log(x1 + f) - 0.2) / (1 + x1 + f);
+            f = f - (1 + x1 + f + 0.5 * e) * e * (x1 + f) / (1 + x1 + f + e * (1 + e / 3));
+            e = (Math.log(x1 + f) + f - x2) / (1 + x1 + f);
+            f = f - (1 + x1 + f + 0.5 * e) * e * (x1 + f) / (1 + x1 + f + e * (1 + e / 3));
+            f = 0.5 * Math.log(10) / f;
+            f = f * f;
+            double darcyFF = f;
+
+            double pressure = (darcyFF * (1000 / internalDiam) * (Math.pow(velocity, 2) * density / 2)) / (1e5);
+
+            pressureValues.add(pressure);
+        }
+        int i = findIndex(pressureValues);
+        PressureData pressureData = new PressureData();
+        pressureData.setPressure(pressureValues.get(i) * networkLength);
+        pressureData.setInternalDiameter(pipeDiameter);
+        return pressureData;
+
+
+    }
 
     private int findIndex(List<Double> values) {
         for (int i = 0; i < values.size() - 1; i++) {
-            if (Math.abs(values.get(i) - values.get(i + 1)) < 10) {
+            if (Math.abs(values.get(i) - values.get(i + 1)) < 5) {
                 return i;
             }
         }

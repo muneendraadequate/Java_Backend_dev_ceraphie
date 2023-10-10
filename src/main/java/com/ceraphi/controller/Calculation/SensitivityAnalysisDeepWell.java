@@ -12,8 +12,6 @@ import java.util.Arrays;
 import java.util.List;
 
 @Component
-
-
 public class SensitivityAnalysisDeepWell {
 
     public double discount_rate = 0.03;

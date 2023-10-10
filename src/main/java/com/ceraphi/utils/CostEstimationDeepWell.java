@@ -8,14 +8,14 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CostEstimationDeepWell {
-    private double Site_preparation_civil_engineering;
-    private  double Drilling_unit_mob_demob;
-    private double Borehole_drilling_construction;
-   private double  Well_completion;
-    private double Mechanical_circulation_pump;
-    private double Heat_exchanger_installation;
-    private  double Heat_connection;
-    private double total;
+    private String Site_preparation_civil_engineering;
+    private  String Drilling_unit_mob_demob;
+    private String Borehole_drilling_construction;
+   private String  Well_completion;
+    private String Mechanical_circulation_pump;
+    private String Heat_exchanger_installation;
+    private  String Heat_connection;
+    private int  total;
 
 
 }

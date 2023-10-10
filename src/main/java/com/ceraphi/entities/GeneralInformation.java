@@ -1,13 +1,8 @@
 package com.ceraphi.entities;
-
 import com.ceraphi.utils.Status;
 import lombok.*;
 import org.hibernate.annotations.Where;
-
 import javax.persistence.*;
-import javax.swing.text.StyledEditorKit;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.Size;
 import java.util.*;
 
 @Entity

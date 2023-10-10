@@ -10,8 +10,8 @@ import org.springframework.data.domain.PageRequest;
 import java.util.List;
 
 public interface ClientDetailsService {
-  ClientDetailsDTO saveClientDetails(ClientDetailsDTO clientDetailsDTO);
-
+//  ClientDetailsDTO saveClientDetails(ClientDetailsDTO clientDetailsDTO);
+  ClientDetailsDTO saveClientDetails(ClientDetailsDTO clientDetailsDto) ;
     ClientDetailsDTO updateClientDetails(Long clientId, ClientDetailsDTO updatedClientDetailsDTO);
 
   List<ClientDetailsDTO> getClientDetails(Long clientId);

@@ -8,8 +8,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DeepWellOpex {
-    private double mechanicalPumpPowerConsumption;
-    private double boostPumpPowerConsumption;
-    private double wellMaintenance;
-    private double total;
+    private String mechanicalPumpPowerConsumption;
+    private String boostPumpPowerConsumption;
+    private String wellMaintenance;
+    private double  total;
 }

@@ -8,8 +8,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class HeatPumpOpex {
-    private double WellMaintenance;
-    private double Heat_pump_electrical_consumption;
-    private double Pumping_power_consumption;
-    private double totalOpex;
+    private String WellMaintenance;
+    private String Heat_pump_electrical_consumption;
+    private String Pumping_power_consumption;
+    private double  totalOpex;
 }

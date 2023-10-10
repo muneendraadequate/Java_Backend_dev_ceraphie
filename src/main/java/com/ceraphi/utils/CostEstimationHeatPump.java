@@ -8,13 +8,13 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CostEstimationHeatPump {
-    private double Site_preparation_civil_engineering;
-    private double Drilling_unit_mob_demob;
-    private double Borehole_drilling_construction;
-    private double Borehole_completion;
-    private double Heat_pump_heat_exchanger_installation;
-    private double Heat_connection;
-    private double Plate_heat_exchanger;
-    private double Total;
+    private String Site_preparation_civil_engineering;
+    private String Drilling_unit_mob_demob;
+    private String Borehole_drilling_construction;
+    private String Borehole_completion;
+    private String Heat_pump_heat_exchanger_installation;
+    private String Heat_connection;
+    private String Plate_heat_exchanger;
+    private double  Total;
 
 }

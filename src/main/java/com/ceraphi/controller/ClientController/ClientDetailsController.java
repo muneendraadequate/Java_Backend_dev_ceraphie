@@ -1,12 +1,10 @@
 package com.ceraphi.controller.ClientController;
 
 import com.ceraphi.dto.ClientDetailsDTO;
-import com.ceraphi.dto.CostCalculatorDto;
 import com.ceraphi.repository.ClientDetailsRepository;
 import com.ceraphi.utils.ApiResponseData;
 import com.ceraphi.services.ClientDetailsService;
 import com.ceraphi.utils.ClientDetailsMapper;
-import io.swagger.annotations.Api;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -14,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 @RestController
@@ -33,12 +32,24 @@ public class ClientDetailsController {
 
     @PostMapping("/add-client")
     public ResponseEntity<?> saveClientDetails(@Valid @RequestBody ClientDetailsDTO clientDetailsDTO, BindingResult result) {
-        boolean b = clientDetailsRepository.existsByEmail(clientDetailsDTO.getEmail());
-        if (result.hasErrors() || b==true) {
-            ApiResponseData apiResponseData1 = new ApiResponseData();
-            List fieldErrors = apiResponseData1.getFieldErrors(result);
-            ApiResponseData<?> apiResponseData = ApiResponseData.builder().errors(fieldErrors).status(HttpStatus.ALREADY_REPORTED.value()).message("Validation error").message("Email error").build();
-            return ResponseEntity.ok(apiResponseData);
+        if (result.hasErrors()) {
+            List<String> fieldErrors = result.getAllErrors()
+                    .stream()
+                    .map(error -> error.getDefaultMessage())
+                    .collect(Collectors.toList());
+            ApiResponseData<?> apiResponseData = ApiResponseData.builder()
+                    .errors(fieldErrors)
+                    .status(HttpStatus.BAD_REQUEST.value())
+                    .message("Validation error")
+                    .build();
+
+            return ResponseEntity.badRequest().body(apiResponseData);
+        } else if (clientDetailsRepository.existsByEmail(clientDetailsDTO.getEmail())) {
+            ApiResponseData<?> apiResponseData = ApiResponseData.builder()
+                    .status(HttpStatus.ALREADY_REPORTED.value())
+                    .message("Email already exists")
+                    .build();
+            return ResponseEntity.status(HttpStatus.ALREADY_REPORTED).body(apiResponseData);
         } else {
             ClientDetailsDTO savedClientDetailsDTO = clientDetailsService.saveClientDetails(clientDetailsDTO);
             ApiResponseData<?> apiResponseData = ApiResponseData.builder()
