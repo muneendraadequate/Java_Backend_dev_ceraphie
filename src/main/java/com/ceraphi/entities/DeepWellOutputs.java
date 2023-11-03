@@ -1,21 +1,29 @@
-package com.ceraphi.utils;
+package com.ceraphi.entities;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import javax.persistence.*;
+
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
-public class OutPutCalculationHeatPump {
-    private double SCOP;
-    private double Condenser;
-    private double Evaporator;
+@AllArgsConstructor
+public class DeepWellOutputs {
+    @Id
+    @GeneratedValue(strategy= GenerationType.IDENTITY)
+    private Long id;
+
+
     private double In;
+
     private double Out;
     private double Well_Outlet_Temp;
+
     private double Well_inlet_temp;
+
     private double Well_Flow_rate;
+
     private double Well_pressure_drop;
     private double Well_pump_power;
     private double Well_Depth;
@@ -29,5 +37,9 @@ public class OutPutCalculationHeatPump {
     private double Deliverable_Temp;
     private double Process_Return_Temp;
     private double Overall_Annual_Consumption;
+    private double annual_thermal_productions;
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "general_Information_id")
+    private GeneralInformation generalInformation;
 
 }

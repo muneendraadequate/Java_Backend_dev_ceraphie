@@ -12,7 +12,7 @@ import javax.validation.constraints.Size;
 @NoArgsConstructor
 public class GeneralInformationDto {
     @NotEmpty(message = "projectName couldn't  be empty")
-    @Size(min = 2, message = "Project name   should have at least 2 characters")
+    @Size(min = 1, message = "Project name   should have at least 1 characters")
     private String projectName;
     @NotEmpty(message = "address field couldn't be empty ")
     private String address;

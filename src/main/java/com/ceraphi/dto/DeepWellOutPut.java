@@ -1,4 +1,4 @@
-package com.ceraphi.utils;
+package com.ceraphi.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -30,5 +30,6 @@ public class DeepWellOutPut {
     private double Deliverable_Temp;
     private double Process_Return_Temp;
     private double Overall_Annual_Consumption;
+    private double annual_thermal_productions;
 
 }

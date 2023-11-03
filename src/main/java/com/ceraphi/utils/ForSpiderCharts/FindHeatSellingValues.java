@@ -175,7 +175,7 @@ public class FindHeatSellingValues {
 //
 //=====================================testing======================================================
 
-    public  List<LCOHYearResponse> lcohResponseHeatPump( double medium_well_CAPEX,double medium_well_OPEX ) {
+    public  List<LCOHYearResponse> lcohResponseHeatPump( double well_CAPEX,double well_OPEX ,double discount_rate) {
         List<LCOHYearResponse> responseList = new ArrayList<>();
         // Step 2 - Initialize arrays
         int[] years = new int[41];
@@ -198,10 +198,9 @@ public class FindHeatSellingValues {
         Double[] priceInflationFactor = new Double[rows];
         Double[] discountedCashFlow = new Double[rows];
         Double[] totalCostArray = new Double[rows]; // Array to store total cost
-
         // Set constant values
-        Double mediumWellCapex = medium_well_CAPEX;
-        Double mediumWellOpex = medium_well_OPEX;
+        Double mediumWellCapex = well_CAPEX;
+        Double mediumWellOpex = well_OPEX;
         Double productionValue = 8600.0;
         Double price = selling_price;
         Double electricalPriceInflation = electrical_Price_Inflation; // 3% inflation
@@ -225,7 +224,7 @@ public class FindHeatSellingValues {
             // Assign capex[i] and opex[i] to costValues array
             totalCostArray[i] = totalCost;
             revenue[i] = production[i] * price * priceInflationFactor[i];
-            Double cashFlow = revenue[i] - cost;
+            Double cashFlow = revenue[i] - totalCost;
             // Assign cashFlow value to the netCashFlow array or use it as needed.
             netCashFlow[i] = cashFlow;
         }
@@ -234,7 +233,8 @@ public class FindHeatSellingValues {
         // Discounted Cost, and Discounted Production
         Double cumulativeCashFlowValue = 0.0;
         for (int i = 0; i < rows; i++) {
-            discountedFactor[i] = 1.0 / Math.pow(1.0 + discount_rate, years[i]);
+            double discountRate=discount_rate/100;
+            discountedFactor[i] = 1.0 / Math.pow(1.0 + discountRate, years[i]);
             discountedCashFlow[i] = discountedFactor[i] * netCashFlow[i];
             if (i == 0) {
                 cumulativeCashFlow[i] = discountedCashFlow[i];
@@ -272,7 +272,7 @@ public class FindHeatSellingValues {
             Double IRR = irrValue != null ? irrValue : 0.0;
 
             // Calculate P/I
-            Double PI = cumulativeCashFlow[x - 1] / medium_well_OPEX + 1.0;
+            Double PI = cumulativeCashFlow[x - 1] / well_OPEX + 1.0;
 
             // Create and add a response object
             LCOHYearResponse response = new LCOHYearResponse(
@@ -297,17 +297,48 @@ public class FindHeatSellingValues {
         return sum;
     }
 
+//    private static Double calculateIRR(Double[] netCashflow, int[] years) {
+//        try {
+//            Double irr = 0.0;
+//
+//            for (Double i = 0.0; i.compareTo(1.001) <= 0; i += 0.001) {
+//                irr = i;
+//                Double[] cumulativeCashFlow = new Double[41];
+//
+//                for (int x = 0; x < years.length; x++) {
+//                    Double discountFactor = 1.0 / Math.pow(1.0 + i, years[x]);
+//                    netCashflow[x] *= discountFactor;
+//
+//                    if (x == 0) {
+//                        cumulativeCashFlow[x] = netCashflow[x];
+//                    } else {
+//                        cumulativeCashFlow[x] = netCashflow[x] + cumulativeCashFlow[x - 1];
+//                    }
+//                }
+//
+//                if (cumulativeCashFlow[40] <= 0) {
+//                    break; // Found the IRR, exit the loop
+//                }
+//            }
+//
+//            return irr * 100; // Return IRR as a percentage
+//        } catch (Exception e) {
+//            return null;
+//        }
+//    }
+
+
     private static Double calculateIRR(Double[] netCashflow, int[] years) {
         try {
             Double irr = 0.0;
 
-            for (Double i = 0.0; i.compareTo(1.001) <= 0; i += 0.001) {
+            for (Double i = 0.0; i <= 1.001; i += 0.001) {
                 irr = i;
                 Double[] cumulativeCashFlow = new Double[41];
 
                 for (int x = 0; x < years.length; x++) {
                     Double discountFactor = 1.0 / Math.pow(1.0 + i, years[x]);
-                    netCashflow[x] *= discountFactor;
+                    netCashflow[x] = netCashflow[x] * discountFactor;
 
                     if (x == 0) {
                         cumulativeCashFlow[x] = netCashflow[x];
@@ -316,12 +347,12 @@ public class FindHeatSellingValues {
                     }
                 }
 
-                if (cumulativeCashFlow[40] <= 0) {
+                if (cumulativeCashFlow[40] <= 0.0) {
                     break; // Found the IRR, exit the loop
                 }
             }
 
-            return irr * 100; // Return IRR as a percentage
+            return irr * 100.0; // Return IRR as a percentage
         } catch (Exception e) {
             return null;
         }

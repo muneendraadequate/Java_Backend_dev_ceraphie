@@ -184,16 +184,14 @@ public class FindDiscountRates {
 
 
 
-public  List<LCOHYearResponse> lcohResponseHeatPump(double medium_well_CAPEX, double medium_well_OPEX) {
+public  List<LCOHYearResponse> lcohDiscountRates(double well_capex, double well_opex,double selling_price) {
         List<LCOHYearResponse> responseList = new ArrayList<>();
         // Step 2 - Initialize arrays
         int[] years = new int[41];
         for (int i = 0; i <= 40; i++) {
         years[i] = i;
         }
-
         int rows = years.length;
-
         // Initialize arrays
         Double[] capex = new Double[rows];
         Double[] opex = new Double[rows];
@@ -207,12 +205,11 @@ public  List<LCOHYearResponse> lcohResponseHeatPump(double medium_well_CAPEX, do
         Double[] priceInflationFactor = new Double[rows];
         Double[] discountedCashFlow = new Double[rows];
         Double[] totalCostArray = new Double[rows]; // Array to store total cost
-
         // Set constant values
-        Double mediumWellCapex = medium_well_CAPEX;
-        Double mediumWellOpex = medium_well_OPEX;
+        Double wellCapex = well_capex;
+        Double wellOpex = well_opex;
         Double productionValue = 8600.0;
-        Double price = selling_price;
+        Double price = selling_price*1000;
         Double electricalPriceInflation = electrical_Price_Inflation; // 3% inflation
 
         // Initialize the price inflation factor
@@ -222,23 +219,21 @@ public  List<LCOHYearResponse> lcohResponseHeatPump(double medium_well_CAPEX, do
         for (int i = 1; i < rows; i++) {
         priceInflationFactor[i] = priceInflationFactor[i - 1] * (1.0 + electricalPriceInflation);
         }
-
         // Populate capex, opex, and production arrays with constant values
         Double totalCost = 0.0;
         for (int i = 0; i < rows; i++) {
-        capex[i] = (i == 0) ? mediumWellCapex : 0.0;
-        opex[i] = (i != 0) ? mediumWellOpex : 0.0;
+        capex[i] = (i == 0) ? wellCapex : 0.0;
+        opex[i] = (i != 0) ? wellOpex : 0.0;
         production[i] = (i == 0) ? 0.0 : productionValue;
         Double cost = capex[i] + opex[i];
         totalCost = cost * priceInflationFactor[i]; // Calculate and store total cost
         // Assign capex[i] and opex[i] to costValues array
         totalCostArray[i] = totalCost;
         revenue[i] = production[i] * price * priceInflationFactor[i];
-        Double cashFlow = revenue[i] - cost;
+        Double cashFlow = revenue[i] - totalCost;
         // Assign cashFlow value to the netCashFlow array or use it as needed.
         netCashFlow[i] = cashFlow;
         }
-
         // Calculate Discounted Factor, Discounted Cash Flow, Cumulative Cash Flow,
         // Discounted Cost, and Discounted Production
         Double cumulativeCashFlowValue = 0.0;
@@ -255,9 +250,6 @@ public  List<LCOHYearResponse> lcohResponseHeatPump(double medium_well_CAPEX, do
         discountedCost[i] = (capex[i] + opex[i]) * discountedFactor[i];
         discountedProduction[i] = production[i] * discountedFactor[i];
         }
-
-        // Calculate values for 25 years, 30 years, and 40 years
-        int[] yearsToCalculate = {25, 30, 40};
         for (int i = 0; i < 3; i++) {
             int x;
             if (i == 0) {
@@ -281,7 +273,7 @@ public  List<LCOHYearResponse> lcohResponseHeatPump(double medium_well_CAPEX, do
         Double IRR = irrValue != null ? irrValue : 0.0;
 
         // Calculate P/I
-        Double PI = cumulativeCashFlow[x - 1] / medium_well_CAPEX + 1.0;
+        Double PI = cumulativeCashFlow[x - 1] / well_capex + 1.0;
 
         // Create and add a response object
         LCOHYearResponse response = new LCOHYearResponse(
@@ -293,7 +285,6 @@ public  List<LCOHYearResponse> lcohResponseHeatPump(double medium_well_CAPEX, do
         );
         responseList.add(response);
         }
-//        }
 
         return responseList;
         }

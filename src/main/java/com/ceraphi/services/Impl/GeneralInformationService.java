@@ -1,14 +1,11 @@
 package com.ceraphi.services.Impl;
 
 import com.ceraphi.dto.GeneralInformationDto;
+import com.ceraphi.dto.InputsDto;
 import com.ceraphi.dto.WellInfoDto;
-import com.ceraphi.entities.ClientDetails;
-import com.ceraphi.entities.GeneralInformation;
-import com.ceraphi.entities.WellInformation;
+import com.ceraphi.entities.*;
 import com.ceraphi.exceptions.ResourceNotFoundException;
-import com.ceraphi.repository.ClientDetailsRepository;
-import com.ceraphi.repository.GeneralInformationRepository;
-import com.ceraphi.repository.WellInformationRepository;
+import com.ceraphi.repository.*;
 import com.ceraphi.services.*;
 import com.ceraphi.utils.ApiResponseData;
 import com.ceraphi.utils.Status;
@@ -40,7 +37,7 @@ public class GeneralInformationService implements GeneralInfoServices {
     @Autowired
     private SubSurfaceService subSurfaceService;
     @Autowired
-    private  SurfaceEquipmentService surfaceEquipmentService;
+    private SurfaceEquipmentService surfaceEquipmentService;
     @Autowired
     private WellService wellService;
     @Autowired
@@ -51,11 +48,15 @@ public class GeneralInformationService implements GeneralInfoServices {
     @Autowired
     private OutputCalculatorService outputCalculator;
     @Autowired
-   private  ClientDetailsRepository clientDetailsRepository;
+    private ClientDetailsRepository clientDetailsRepository;
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private InputsRepository inputsRepository;
 
 
-
-//    @Override
+    //    @Override
 //    public ApiResponseData<GeneralInformationDto> saveGeneralInformation(GeneralInformationDto generalInformationDto) {
 //
 //
@@ -73,64 +74,88 @@ public class GeneralInformationService implements GeneralInfoServices {
 //            return ApiResponseData.<GeneralInformationDto>builder().status(HttpStatus.NOT_FOUND.value()).message("Client not found").build();
 //        }
 //        }
-@Override
-public ApiResponseData<GeneralInformationDto> saveGeneralInformation(GeneralInformationDto generalInformationDto) {
-
-    // Map DTO to entity
-    GeneralInformation generalInfo = mapToEntity(generalInformationDto);
-//    String clientId = generalInformationDto.getClientId();
-
-    // Check if a client with the given clientId exists
-//    Optional<ClientDetails> byId = clientDetailsRepository.findById(Long.parseLong(clientId));
-
-//    if (byId.isPresent()) {
-        // The client exists, set the clientName
-//        generalInfo.setClientName(byId.get().getClientName());
-
-        // Set status and save the general information as a new project
-        generalInfo.setStatus(Status.ACTIVE);
-        GeneralInformation generalInfo1 = generalInformationRepository.save(generalInfo);
-        GeneralInformationDto generalInformationDto1 = mapToDto1(generalInfo1);
-        generalInformationDto1.setKey(generalInfo1.getId());
-
-        return ApiResponseData.<GeneralInformationDto>builder()
-                .status(HttpStatus.OK.value())
-                .message("GeneralInformationData saved successfully")
-                .id(generalInformationDto1.getKey())
-                .build();
-//    } else {
-//        return ApiResponseData.<GeneralInformationDto>builder()
-//                .status(HttpStatus.NOT_FOUND.value())
-//                .message("Client not found")
-//                .build();
-//    }
-}
-
     @Override
-    public GeneralInformationDto updateGeneralInformation(Long id, GeneralInformationDto updateGeneralInformation) {
-        Optional<GeneralInformation> byId = generalInformationRepository.findById(id);
-        GeneralInformation generalInfo = byId.get();
+    public ApiResponseData<GeneralInformationDto> saveGeneralInformation(GeneralInformationDto generalInformationDto) {
 
-        generalInfo.setCountry(updateGeneralInformation.getCountry());
-        generalInfo.setCity(updateGeneralInformation.getCity());
-        generalInfo.setAddress(updateGeneralInformation.getAddress());
-        generalInfo.setClientName(updateGeneralInformation.getClientName());
-        generalInfo.setPostalCode(updateGeneralInformation.getPostalCode());
-        generalInfo.setRestrictionDetails(updateGeneralInformation.getRestrictionDetails());
-        generalInfo.setClientId(updateGeneralInformation.getClientId());
-        generalInfo.setGeoPoliticalData(updateGeneralInformation.getGeoPoliticalData());
-        generalInfo.setPreferredUnits(updateGeneralInformation.getPreferredUnits());
-        generalInfo.setProjectCurrency(updateGeneralInformation.getProjectCurrency());
-        generalInfo.setProjectName(updateGeneralInformation.getProjectName());
-        generalInfo.setId(id);
-        GeneralInformation generalInformationUpdate = generalInformationRepository.save(generalInfo);
-        GeneralInformationDto generalInformationDto = new GeneralInformationDto();
-        generalInformationDto.setKey(id);
-        return generalInformationDto;
+        // Map DTO to entity
+        GeneralInformation generalInfo = new GeneralInformation();
+        String clientId = generalInformationDto.getClientId();
 
+        Optional<ClientDetails> byId = clientDetailsRepository.findById(Long.parseLong(clientId));
+
+        if (byId.isPresent()) {
+            ClientDetails clientDetails = byId.get();
+            generalInfo.setUser(generalInformationDto.getUser());
+            generalInfo.setClientName(clientDetails.getClientName());
+            generalInfo.setProjectName(generalInformationDto.getProjectName());
+            generalInfo.setPreferredUnits(generalInformationDto.getPreferredUnits());
+            generalInfo.setProjectCurrency(generalInformationDto.getProjectCurrency());
+            generalInfo.setClientId(String.valueOf(clientDetails.getId()));
+            generalInfo.setGeoPoliticalData(generalInformationDto.getGeoPoliticalData());
+            generalInfo.setRestrictionDetails(generalInformationDto.getRestrictionDetails());
+            generalInfo.setAddress(generalInformationDto.getAddress());
+            generalInfo.setCity(generalInformationDto.getCity());
+            generalInfo.setCountry(generalInformationDto.getCountry());
+            generalInfo.setPostalCode(generalInformationDto.getPostalCode());
+            generalInfo.setIs_deleted(false);
+            generalInfo.setProjectType(generalInformationDto.getProjectType());
+            // Set status and save the general information as a new project
+            generalInfo.setStatus(Status.ACTIVE);
+            GeneralInformation generalInfo1 = generalInformationRepository.save(generalInfo);
+            GeneralInformationDto generalInformationDto1 = mapToDto1(generalInfo1);
+            generalInformationDto1.setKey(generalInfo1.getId());
+
+            return ApiResponseData.<GeneralInformationDto>builder()
+                    .status(HttpStatus.OK.value())
+                    .message("GeneralInformationData saved successfully")
+                    .id(generalInformationDto1.getKey())
+                    .build();
+        } else {
+            return ApiResponseData.<GeneralInformationDto>builder()
+                    .status(HttpStatus.NOT_FOUND.value())
+                    .message("Client not found")
+                    .build();
+        }
     }
 
+    @Override
+    public ApiResponseData<GeneralInformationDto> updateGeneralInformation(Long id, GeneralInformationDto updateGeneralInformation) {
+        Optional<GeneralInformation> byId = generalInformationRepository.findById(id);
+        GeneralInformation generalInfo = byId.get();
+        if (byId.isPresent() && updateGeneralInformation.getClientId().equals(generalInfo.getClientId()) && updateGeneralInformation.getUser().equals(generalInfo.getUser())) {
+            String clientId = updateGeneralInformation.getClientId();
+            Optional<ClientDetails> clientById = clientDetailsRepository.findById(Long.parseLong(clientId));
+            ClientDetails clientDetails = clientById.get();
+            generalInfo.setUser(updateGeneralInformation.getUser());
+            generalInfo.setClientName(clientDetails.getClientName());
+            generalInfo.setProjectName(updateGeneralInformation.getProjectName());
+            generalInfo.setPreferredUnits(updateGeneralInformation.getPreferredUnits());
+            generalInfo.setProjectCurrency(updateGeneralInformation.getProjectCurrency());
+            generalInfo.setClientId(String.valueOf(clientDetails.getId()));
+            generalInfo.setGeoPoliticalData(updateGeneralInformation.getGeoPoliticalData());
+            generalInfo.setRestrictionDetails(updateGeneralInformation.getRestrictionDetails());
+            generalInfo.setAddress(updateGeneralInformation.getAddress());
+            generalInfo.setCity(updateGeneralInformation.getCity());
+            generalInfo.setCountry(updateGeneralInformation.getCountry());
+            generalInfo.setPostalCode(updateGeneralInformation.getPostalCode());
+            // Set status and save the general information as a new project
+            GeneralInformation generalInfo1 = generalInformationRepository.save(generalInfo);
+            GeneralInformationDto generalInformationDto = mapToDto1(generalInfo1);
+            generalInformationDto.setKey(generalInfo1.getId());
 
+            return ApiResponseData.<GeneralInformationDto>builder()
+                    .status(HttpStatus.OK.value())
+                    .message("GeneralInformationData saved successfully")
+                    .id(generalInformationDto.getKey())
+                    .build();
+
+        } else {
+            return ApiResponseData.<GeneralInformationDto>builder()
+                    .status(HttpStatus.NOT_FOUND.value())
+                    .message("Client not found" + "or" + "user not found")
+                    .build();
+        }
+    }
 
 
     @Override
@@ -140,7 +165,6 @@ public ApiResponseData<GeneralInformationDto> saveGeneralInformation(GeneralInfo
         return generalInformationDto;
 
     }
-
 
 
     @Override
@@ -156,7 +180,7 @@ public ApiResponseData<GeneralInformationDto> saveGeneralInformation(GeneralInfo
         return collect;
     }
 
-//    @Override
+    //    @Override
 //    public List<GeneralInformationDto> getByUserId(Long userId) {
 //        // Step 1: Fetch the list of GeneralInformation objects based on userId
 //        List<GeneralInformation> allByUser = generalInformationRepository.findAllByUser(userId);
@@ -185,8 +209,8 @@ public ApiResponseData<GeneralInformationDto> saveGeneralInformation(GeneralInfo
 //    }
     @Override
     public void deleteById(Long id) {
-        GeneralInformation generalInformation = generalInformationRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("general", "id", id));
-     generalInformation.setIs_deleted(true);
+        GeneralInformation generalInformation = generalInformationRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("generalInfo", "id", id));
+        generalInformation.setIs_deleted(true);
         generalInformationRepository.save(generalInformation);
         costCalculatorService.deleteByGeneralInformationId(id);
         heatConnectionCapexService.deleteByGeneralInformationId(id);
@@ -197,6 +221,28 @@ public ApiResponseData<GeneralInformationDto> saveGeneralInformation(GeneralInfo
         outputCalculator.deleteByGeneralInformationId(id);
         wellInstallationCAPEXService.deleteByGeneralInformationId(id);
 
+    }
+
+    @Override
+    public void saveInputs(InputsDto inputsDto) {
+        Inputs inputs = inputsMapToEntity(inputsDto);
+//
+//        if (inputsDto.getProjectId() != null) {
+//            GeneralInformation generalInformation = generalInformationRepository.findById(inputsDto.getProjectId())
+//                    .orElseThrow(() -> new ResourceNotFoundException("generalInfo", "id", inputsDto.getProjectId()));
+//            inputs.setGeneralInformation(generalInformation);
+//        }
+        inputs.setCreatedAt(new Date());
+        inputsRepository.save(inputs);
+    }
+
+    @Override
+    public InputsDto findLastSavedData() {
+        Inputs inputs = inputsRepository.findFirstByOrderByCreatedAtDesc();
+
+        InputsDto inputsDto = inputsMapToDto(inputs);
+
+        return inputsDto;
     }
 
 
@@ -218,20 +264,68 @@ public ApiResponseData<GeneralInformationDto> saveGeneralInformation(GeneralInfo
         GeneralInformationDto generalInformationDto = modelMapper.map(generalInformation, GeneralInformationDto.class);
         return generalInformationDto;
     }
+
     public List<WellInfoDto> getWellInformationByGeneralInformationId(long id) {
 
-            List<WellInformation> byGeneralInformationId = wellInformationRepository.findByGeneralInformationId(id);
+        List<WellInformation> byGeneralInformationId = wellInformationRepository.findByGeneralInformationId(id);
 
-            List<WellInfoDto> collect = byGeneralInformationId.stream().map(s -> (mapToDto(s))).collect(Collectors.toList());
-            return collect;
-        }
-    public WellInfoDto mapToDto (WellInformation wellInformation){
+        List<WellInfoDto> collect = byGeneralInformationId.stream().map(s -> (mapToDto(s))).collect(Collectors.toList());
+        return collect;
+    }
+
+    public WellInfoDto mapToDto(WellInformation wellInformation) {
         WellInfoDto wellInfoDto = modelMapper.map(wellInformation, WellInfoDto.class);
         return wellInfoDto;
     }
 
-    public WellInformation mapToEntity (WellInfoDto wellInfoDto){
+    public WellInformation mapToEntity(WellInfoDto wellInfoDto) {
         WellInformation wellInformation = modelMapper.map(wellInfoDto, WellInformation.class);
         return wellInformation;
     }
+
+    public Inputs inputsMapToEntity(InputsDto inputsDto) {
+        Inputs inputs = new Inputs();
+        inputs.setCapacityRequired(inputsDto.getCapacityRequired());
+        inputs.setRequiredProcessTemp(inputsDto.getRequiredProcessTemp());
+        inputs.setNetworkLength(inputsDto.getNetworkLength());
+        inputs.setGeothermalGradient(inputsDto.getGeothermalGradient());
+        inputs.setMinOperationalHours(inputsDto.getMinOperationalHours());
+        inputs.setAmbientTemperature(inputsDto.getAmbientTemperature());
+        inputs.setLifeTimeYears(inputsDto.getLifeTimeYears());
+        inputs.setSellingPrice(inputsDto.getSellingPrice());
+        inputs.setProcessDelta(inputsDto.getProcessDelta());
+        inputs.setPumpEfficiency(inputsDto.getPumpEfficiency());
+        inputs.setDeepWellFlowRates(inputsDto.getDeepWellFlowRates());
+        inputs.setDeepDelta(inputsDto.getDeepDelta());
+        inputs.setConnectionPipeThermalConductivity(inputsDto.getConnectionPipeThermalConductivity());
+        inputs.setConnectionPipeThickness(inputsDto.getConnectionPipeThickness());
+        inputs.setFuelType(inputsDto.getFuelType());
+        inputs.setDiscountRate_percent(inputsDto.getDiscountRate_percent());
+        inputs.setElectricalPrice(inputsDto.getElectricalPrice());
+        return inputs;
+
     }
+
+    public InputsDto inputsMapToDto(Inputs inputs) {
+        InputsDto inputsDto = new InputsDto();
+        inputsDto.setCapacityRequired(inputs.getCapacityRequired());
+        inputsDto.setRequiredProcessTemp(inputs.getRequiredProcessTemp());
+        inputsDto.setNetworkLength(inputs.getNetworkLength());
+        inputsDto.setGeothermalGradient(inputs.getGeothermalGradient());
+        inputsDto.setMinOperationalHours(inputs.getMinOperationalHours());
+        inputsDto.setAmbientTemperature(inputs.getAmbientTemperature());
+        inputsDto.setLifeTimeYears(inputs.getLifeTimeYears());
+        inputsDto.setSellingPrice(inputs.getSellingPrice());
+        inputsDto.setProcessDelta(inputs.getProcessDelta());
+        inputsDto.setPumpEfficiency(inputs.getPumpEfficiency());
+        inputsDto.setDeepWellFlowRates(inputs.getDeepWellFlowRates());
+        inputsDto.setDeepDelta(inputs.getDeepDelta());
+        inputsDto.setConnectionPipeThermalConductivity(inputs.getConnectionPipeThermalConductivity());
+        inputsDto.setConnectionPipeThickness(inputs.getConnectionPipeThickness());
+        inputsDto.setFuelType(inputs.getFuelType());
+        inputsDto.setDiscountRate_percent(inputs.getDiscountRate_percent());
+        inputsDto.setElectricalPrice(inputs.getElectricalPrice());
+        return inputsDto;
+
+    }
+}

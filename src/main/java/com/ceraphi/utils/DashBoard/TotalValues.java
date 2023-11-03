@@ -10,11 +10,17 @@ import lombok.ToString;
 @NoArgsConstructor
 @ToString
 public class TotalValues {
-    private String installed;
-    private String TonesOfCo2;
-    private String capex;
-    private String nonProductiveTime;
-    private String operationHours;
-
+//    private int totalProjects;
+    private int installed;
+    private int installedHeatCapacity_MW;
+    private int totalCapex;
+    private int heatWells;
+    private int  deepWells;
+    //
+//    private int totalProjects;
+//    private String installedHeatCapacity;
+//    private String totalProjectCAPEX;
+//    private String totalDeepWells;
+//    private String totalMediumBoreHoles;
 
 }

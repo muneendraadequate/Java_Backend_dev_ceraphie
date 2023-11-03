@@ -10,25 +10,7 @@ import org.springframework.stereotype.Service;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 
-//@Service
-//public class EmailServiceImpl implements EmailService {
-//    @Value("${spring.mail.username}")
-//    private String senderEmail;
-//    @Autowired
-//    private JavaMailSender javaMailSender;
-//
-//    public EmailServiceImpl() {
-//    }
-//
-//    public void sendResetPasswordEmail(String email, String resetLink) {
-//        SimpleMailMessage message = new SimpleMailMessage();
-//        message.setFrom(this.senderEmail);
-//        message.setTo(email);
-//        message.setSubject("Password Reset");
-//        message.setText("Please click on the following link to reset your password: " + resetLink);
-//        this.javaMailSender.send(message);
-//    }
-//}
+
 @Service
 public class EmailServiceImpl implements EmailService  {
 
@@ -46,5 +28,15 @@ public class EmailServiceImpl implements EmailService  {
         message.setText("Please click on the following link to reset your password: " + subject);
         this.javaMailSender.send(message);
 
+    }
+
+    @Override
+    public void userRegistrationEmail(String email, String password) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(this.fromEmail);
+        message.setTo(email);
+        message.setSubject("Account Verification with Password");
+        message.setText("Please use this password to login: " + password);
+        this.javaMailSender.send(message);
     }
 }

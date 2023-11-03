@@ -171,7 +171,7 @@ public class FindCapexValues {
 //
 //}
 
-    public  List<LCOHYearResponse> lcohResponseHeatPump( double medium_well_OPEX) {
+    public  List<LCOHYearResponse> lcohCapex( double medium_well_OPEX,double selling_price,double discount_rate) {
         List<LCOHYearResponse> responseList = new ArrayList<>();
         // Step 2 - Initialize arrays
         int[] years = new int[41];
@@ -199,7 +199,7 @@ public class FindCapexValues {
         Double mediumWellCapex = deep_well_CAPEX;
         Double mediumWellOpex = medium_well_OPEX;
         Double productionValue = 8600.0;
-        Double price = selling_price;
+        Double price = selling_price * 1000;
         Double electricalPriceInflation = electrical_Price_Inflation; // 3% inflation
 
         // Initialize the price inflation factor
@@ -221,7 +221,7 @@ public class FindCapexValues {
             // Assign capex[i] and opex[i] to costValues array
             totalCostArray[i] = totalCost;
             revenue[i] = production[i] * price * priceInflationFactor[i];
-            Double cashFlow = revenue[i] - cost;
+            Double cashFlow = revenue[i] - totalCost;
             // Assign cashFlow value to the netCashFlow array or use it as needed.
             netCashFlow[i] = cashFlow;
         }
@@ -230,7 +230,8 @@ public class FindCapexValues {
         // Discounted Cost, and Discounted Production
         Double cumulativeCashFlowValue = 0.0;
         for (int i = 0; i < rows; i++) {
-            discountedFactor[i] = 1.0 / Math.pow(1.0 + discount_rate, years[i]);
+            double discountRate=discount_rate/100;
+            discountedFactor[i] = 1.0 / Math.pow(1.0 + discountRate, years[i]);
             discountedCashFlow[i] = discountedFactor[i] * netCashFlow[i];
             if (i == 0) {
                 cumulativeCashFlow[i] = discountedCashFlow[i];

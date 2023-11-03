@@ -17,5 +17,12 @@ public class SummaryHeatPump {
         private BigDecimal pi;
         private int period;
 
+//        private BigDecimal year;
+//        private Double lcoh;
+//        private Double npv;
+//        private Double irr;
+//        private Double pi;
+//        private int period;
 
-    }
+
+}

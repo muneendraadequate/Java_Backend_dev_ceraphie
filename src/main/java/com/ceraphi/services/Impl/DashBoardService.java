@@ -2,7 +2,9 @@ package com.ceraphi.services.Impl;
 
 import com.ceraphi.entities.GeneralInformation;
 import com.ceraphi.entities.WellInformation;
+import com.ceraphi.entities.WellSummaryData;
 import com.ceraphi.repository.GeneralInformationRepository;
+import com.ceraphi.repository.SummaryRepository;
 import com.ceraphi.repository.WellInformationRepository;
 import com.ceraphi.utils.DashBoard.GeographicalAnalysis;
 import com.ceraphi.utils.DashBoard.WellByType;
@@ -17,6 +19,8 @@ import java.util.List;
 public class DashBoardService {
     private final GeneralInformationRepository generalInformationRepository;
     private final WellInformationRepository wellInformationRepository;
+    @Autowired
+    private SummaryRepository summaryRepository;
 
     @Autowired
     public DashBoardService(
@@ -121,7 +125,89 @@ public List<WellByType> getWellCountsByUserId(Long userId) {
 
     return wellTypeDTOs;
 }
+    public int getTotalProjectsForUser(Long userId) {
+        // Use the repository to get projects for the user
+        List<GeneralInformation> userProjects = generalInformationRepository.findAllByUser(userId);
+        return userProjects.size();
+}
+
+
+    public int calculateTotalCapacity() {
+        List<WellSummaryData> summaryDataList = summaryRepository.findAll();
+        int totalCapacity = 0;
+
+        for (WellSummaryData data : summaryDataList) {
+            if (data.isHeatSelected() && !data.isDeepSelected()) {
+                totalCapacity += parseCapacity(data.getHeatCapacityRequired());
+            } else if (data.isDeepSelected() && !data.isHeatSelected()) {
+                totalCapacity += parseCapacity(data.getDeepCapacityRequired());
+            } else if (data.isHeatSelected() && data.isDeepSelected()) {
+                totalCapacity += parseCapacity(data.getHeatCapacityRequired());
+                totalCapacity += parseCapacity(data.getDeepCapacityRequired());
+            }
+        }
+
+        return totalCapacity;
+    }
+
+    private int parseCapacity(String capacity) {
+        int value = 0;
+        if (capacity != null && !capacity.isEmpty()) {
+            // Example: Extracting numerical values from strings
+            String numericValue = capacity.replaceAll("\\D", "");
+            value = Integer.parseInt(numericValue);
+        }
+        return value;
+    }
+
+
+    public int calculateTotalInvestment() {
+        List<WellSummaryData> summaryDataList = summaryRepository.findAll();
+        double totalInvestment = 0.0;
+
+        for (WellSummaryData data : summaryDataList) {
+            if (data.isHeatSelected() && !data.isDeepSelected()) {
+                totalInvestment += parseInvestment(data.getHeatInitialInvestment());
+            } else if (data.isDeepSelected() && !data.isHeatSelected()) {
+                totalInvestment += parseInvestment(data.getDeepInitialInvestment());
+            } else if (data.isHeatSelected() && data.isDeepSelected()) {
+                totalInvestment += parseInvestment(data.getHeatInitialInvestment());
+                totalInvestment += parseInvestment(data.getDeepInitialInvestment());
+            }
+        }
+
+        // Convert total investment to millions
+        int totalInvestmentMillions = (int) (totalInvestment / 1000000);
+
+        return totalInvestmentMillions;
+    }
+
+    private double parseInvestment(String investment) {
+        double value = 0.0;
+        if (investment != null && !investment.isEmpty()) {
+            value = Double.parseDouble(investment);
+        }
+        return value;
+    }
+
+
+
+    public int countHeatWellsWithHeatSelected() {
+        return summaryRepository.countHeatWellsForSelectedHeat();
+    }
+
+    public int countDeepWellsWithDeepSelected() {
+        return summaryRepository.countDeepWellsForSelectedDeep();
+    }
+
+
+
 
 
 }
+
+
+
+
+
 

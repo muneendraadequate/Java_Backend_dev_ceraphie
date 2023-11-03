@@ -1,8 +1,6 @@
 package com.ceraphi.controller.WellInformation;
-
 import com.ceraphi.dto.CostCalculatorDto;
 import com.ceraphi.dto.GeneralInformationDto;
-import com.ceraphi.entities.ClientDetails;
 import com.ceraphi.repository.ClientDetailsRepository;
 import com.ceraphi.services.GeneralInfoServices;
 import com.ceraphi.utils.ApiResponseData;
@@ -11,11 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
-
 import javax.validation.Valid;
-
 import java.util.List;
-import java.util.Optional;
 
 
 @RestController
@@ -56,7 +51,6 @@ public class GeneralInformationController {
             }
         }
     }
-
     @PutMapping("/updateGeneralInfo")
     public ResponseEntity<?> updateGeneralInformation(@Valid @RequestBody GeneralInformationDto generalInformation, BindingResult result) {
         if (result.hasErrors()) {
@@ -65,17 +59,17 @@ public class GeneralInformationController {
             ApiResponseData<CostCalculatorDto> apiResponseData = new ApiResponseData<>(null, fieldErrors, HttpStatus.BAD_REQUEST.value(), "Validation error", null);
             return ResponseEntity.badRequest().body(apiResponseData);
         } else {
-            GeneralInformationDto generalInformationDto = generalInfoServices.updateGeneralInformation(generalInformation.getKey(), generalInformation);
-            ApiResponseData<?> apiResponseData = ApiResponseData.builder()
-                    .status(HttpStatus.OK.value())
-                    .id(generalInformationDto.getKey())
-                    .message("GeneralInformation updated successfully")
-                    .build();
-            return ResponseEntity.ok(apiResponseData);
+            ApiResponseData<GeneralInformationDto> generalInformationDto = generalInfoServices.updateGeneralInformation(generalInformation.getKey(), generalInformation);
+            if (generalInformationDto.getStatus() == HttpStatus.OK.value()) {
+                return ResponseEntity.ok(generalInformationDto);
+            }
+            else if (generalInformationDto.getStatus() == HttpStatus.NOT_FOUND.value()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(generalInformationDto);
+            } else {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(generalInformationDto);
+            }
+            }
         }
-    }
-
-
     @GetMapping("/getById/{key}")
     public ResponseEntity<?> getGeneralInfoDataById(@PathVariable Long key) {
         GeneralInformationDto generalInformationById = generalInfoServices.getGeneralInformationById(key);
@@ -101,4 +95,5 @@ public class GeneralInformationController {
         return ResponseEntity.ok(apiResponseData);
 
     }
+
 }

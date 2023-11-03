@@ -11,6 +11,7 @@ import com.ceraphi.utils.*;
 import com.ceraphi.utils.authUtils.EmailService;
 import com.ceraphi.utils.authUtils.PasswordResetRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -21,12 +22,14 @@ import java.io.UnsupportedEncodingException;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
+import javax.management.relation.RoleNotFoundException;
 import javax.validation.Valid;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.*;
-
+//java -jar "C:\Staging\Ceraphiapi.adequateshop.com\Code\demo.jar"
 @RestController
 @RequestMapping("/api/auth")
 @CrossOrigin(value = "*",allowedHeaders = "*")
@@ -45,7 +48,10 @@ public class AuthController {
     private static SecretKeySpec secretKey;
     private static byte[] key;
     private static final String ALGORITHM = "AES";
-
+//    @Autowired
+//    private PasswordEncoder passwordEncoder;
+    private static final String ALPHA_NUMERIC = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    private static SecureRandom secureRandom = new SecureRandom();
 
     @PostMapping("/signin")
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginDto loginDto, BindingResult result) {
@@ -79,7 +85,7 @@ public class AuthController {
             }else {
                     AuthResponse<?> apiResponseData = AuthResponse.builder()
                             .status(HttpStatus.OK.value())
-                            .data(Response.builder().id(user.getId()).username(user.getUsername()).build())
+                            .data(Response.builder().id(user.getId()).username(user.getUsername()).role(user.getRole()).build())
                             .build();
                     return ResponseEntity.ok(apiResponseData);
                 }
@@ -106,17 +112,7 @@ public class AuthController {
                     .build();
             return ResponseEntity.ok(apiResponseData);
         } else {
-            // add check for username exists in a DB
-            if (userRepository.existsByUsername(signUpDto.getUsername())) {
-                AuthResponse<?> apiResponseData = AuthResponse.builder()
-                        .status(HttpStatus.UNAUTHORIZED.value())
-                        .message("Username is already taken!")
-                        .build();
-                return ResponseEntity.ok(apiResponseData);
-            }
-
-            // add check for email exists in DB
-            if (userRepository.existsByUsername(signUpDto.getUsername())) {
+            if (userRepository.existsByUsername(signUpDto.getEmail())) {
                 AuthResponse<?> apiResponseData = AuthResponse.builder()
                         .status(HttpStatus.UNAUTHORIZED.value())
                         .message("Email is already taken!")
@@ -126,13 +122,13 @@ public class AuthController {
 
             // create user object
             User user = new User();
-            user.setType(signUpDto.getType());
-            user.setLastName(signUpDto.getLastName());
             user.setFirstName(signUpDto.getFirstName());
-            user.setClientId(signUpDto.getClientId());
-            user.setUsername(signUpDto.getUsername());
-            user.setPassword(signUpDto.getPassword());
-            Role roles = roleRepository.findByName("ROLE_ADMIN").get();
+            user.setLastName(signUpDto.getSurName());
+            user.setUsername(signUpDto.getEmail());
+            String password = generatePassword();
+            user.setPassword(password);
+            this.emailService.userRegistrationEmail(user.getUsername(), password);
+            Role roles = roleRepository.findByName(signUpDto.getRole()).get();
             user.setUserRoles(Collections.singleton(roles));
             user.setRole(roles.getName().toString());
 
@@ -265,8 +261,122 @@ public class AuthController {
             return ResponseEntity.ok(apiResponseData);
         }
     }
-
+@GetMapping("/users")
+public ResponseEntity<?> getUsers(){
+        ApiResponseData<?> apiResponseData = ApiResponseData.builder().status(HttpStatus.OK.value()).
+                data(userRepository.findAll()).build();
+    return ResponseEntity.ok(apiResponseData);
 }
+    @PutMapping("/updateUser/{id}")
+    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody SignUpDto signUpDto) throws RoleNotFoundException {
+        Optional<User> userOptional = userRepository.findById(id);
+
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+
+            // Update user details
+            if (signUpDto.getFirstName() != null) {
+                user.setFirstName(signUpDto.getFirstName());
+            }
+            if (signUpDto.getEmail() != null) {
+                user.setUsername(signUpDto.getEmail());
+            }
+            if (signUpDto.getSurName() != null) {
+                user.setLastName(signUpDto.getSurName());
+            }
+
+            // Update the user's role
+            if (signUpDto.getRole() != null) {
+                Role role = roleRepository.findByName(signUpDto.getRole())
+                        .orElseThrow(() -> new RoleNotFoundException("Role not found"));
+
+                Set<Role> roles = new HashSet<>();
+                roles.add(role);
+
+                user.setUserRoles(roles);
+                user.setRole(role.getName().toString());
+            }
+
+            userRepository.save(user);
+
+            ApiResponseData<?> apiResponseData = ApiResponseData.builder()
+                    .status(HttpStatus.OK.value())
+                    .message("User Updated Successfully")
+                    .build();
+            return ResponseEntity.ok(apiResponseData);
+        } else {
+            // Handle case where user ID is not found
+            ApiResponseData<?> apiResponseData = ApiResponseData.builder()
+                    .status(HttpStatus.NOT_FOUND.value())
+                    .message("User ID not found")
+                    .build();
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiResponseData);
+        }
+    }
+
+    @GetMapping("/user/{id}")
+    public ResponseEntity<?> getUserById(@PathVariable Long id) {
+        Optional<User> userOptional = userRepository.findById(id);
+
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            SignUpDto userDto = new SignUpDto();
+            userDto.setRole(user.getRole());
+            userDto.setFirstName(user.getFirstName());
+            userDto.setSurName(user.getLastName());
+            userDto.setEmail(user.getUsername());
+            ApiResponseData<?> apiResponseData = ApiResponseData.builder().status(HttpStatus.OK.value()).data(userDto).build();
+            return ResponseEntity.ok(apiResponseData);
+        } else {
+            // Handle case where user ID is not found
+            ApiResponseData<?> apiResponseData = ApiResponseData.builder()
+                    .status(HttpStatus.NOT_FOUND.value())
+                    .message("User ID not found")
+                    .build();
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiResponseData);
+        }
+    }
+
+    @DeleteMapping("/deleteUser/{id}")
+    public ResponseEntity<?> deleteUser(@PathVariable Long id) {
+        Optional<User> byId = userRepository.findById(id);
+        if (byId.isPresent()) {
+            User user = byId.get();
+            user.setIs_deleted(true);
+            userRepository.save(user);
+            ApiResponseData<?> apiResponseData = ApiResponseData.builder()
+                    .status(HttpStatus.OK.value())
+                    .message("User deleted successfully")
+                    .build();
+            return ResponseEntity.ok(apiResponseData);
+        }else {
+            ApiResponseData<?> apiResponseData = ApiResponseData.builder()
+                    .status(HttpStatus.NOT_FOUND.value())
+                    .message("User not found")
+                    .build();
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiResponseData);
+        }
+    }
+
+        public static String generatePassword() {
+        int lengthOfPassword = 10;
+            StringBuilder password = new StringBuilder(lengthOfPassword);
+
+            for (int i = 0; i < lengthOfPassword; i++) {
+                int index = secureRandom.nextInt(ALPHA_NUMERIC.length());
+                password.append(ALPHA_NUMERIC.charAt(index));
+            }
+
+            return password.toString();
+        }
+
+
+
+
+    }
+
+
+
 
 
 

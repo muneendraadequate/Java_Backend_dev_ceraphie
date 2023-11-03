@@ -107,6 +107,8 @@ public class WellInformationService implements WellService {
     }
     @Override
     public ApiResponseData<WellInfoDto> updateWellsData(long generalInformationId, WellInfoDto wellInfoDto) {
+
+
         GeneralInformation generalInformation = generalInformationRepository.findById(generalInformationId)
                 .orElseThrow(() -> new ResourceNotFoundException("generalinfo ", "id", generalInformationId));
 

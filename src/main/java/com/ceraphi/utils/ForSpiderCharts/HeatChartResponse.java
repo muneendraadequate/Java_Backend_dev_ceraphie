@@ -12,4 +12,5 @@ public class HeatChartResponse {
     private int percentage;
     private BigDecimal heatSellingPrice;
     private BigDecimal totalNPV;
+    private BigDecimal lcoh;
 }

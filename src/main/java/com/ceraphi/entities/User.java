@@ -3,6 +3,7 @@ package com.ceraphi.entities;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.Where;
 
 import javax.persistence.*;
 import java.util.Set;
@@ -12,6 +13,7 @@ import java.util.Set;
 @AllArgsConstructor
 @Entity
 @Table(name = "user")
+@Where(clause = "is_deleted = false")
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -19,6 +21,8 @@ public class User {
     private String firstName;
     private String lastName;
     private String username;
+    @Column(nullable = false, columnDefinition = "bit default false")
+    private Boolean is_deleted = false;
     private String role;
     private String type;
     private String clientId;

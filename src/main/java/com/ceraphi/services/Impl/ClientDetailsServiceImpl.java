@@ -185,6 +185,7 @@ public class ClientDetailsServiceImpl implements ClientDetailsService {
     public void deleteClientDetails(Long clientId) {
         ClientDetails clientDetails = clientDetailsRepository.findById(clientId).orElseThrow(() -> new ResourceNotFoundException("Client", "id", clientId));
         clientDetails.setIs_deleted(true);
+        clientDetailsRepository.save(clientDetails);
     }
 
     @Override

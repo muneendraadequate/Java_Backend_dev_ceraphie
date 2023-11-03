@@ -12,7 +12,7 @@ import java.util.Optional;
 
 @EnableJpaRepositories
 public interface GeneralInformationRepository extends JpaRepository<GeneralInformation, Long> {
-    List<GeneralInformation> findAllByUser(Long id);
+//    List<GeneralInformation> findAllByUser(Long id);
 
     // Custom query to count project types by country
 //    @Query("SELECT w.country, " +
@@ -42,7 +42,7 @@ List<Object[]> countWellTypesByUserId(@Param("userId") Long userId);
     List<GeneralInformation> findAllByCountry(String country);
 
     Optional<GeneralInformation> findByClientId(String aLong);
-
+    List<GeneralInformation> findAllByUser(Long userId);
 
 
 }

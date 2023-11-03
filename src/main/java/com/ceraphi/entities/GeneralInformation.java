@@ -4,7 +4,6 @@ import lombok.*;
 import org.hibernate.annotations.Where;
 import javax.persistence.*;
 import java.util.*;
-
 @Entity
 @Table(name = "general_information")
 @Data
@@ -32,8 +31,25 @@ public class GeneralInformation {
     private String GeoPoliticalData;
     @Lob
     private String restrictionDetails;
+
+
+
+    @OneToOne(mappedBy = "generalInformation", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Inputs inputs;
+
+    @OneToOne(mappedBy = "generalInformation", cascade = CascadeType.ALL, orphanRemoval = true)
+    private WellSummaryData summaryData;
+
+
     @OneToMany(mappedBy = "generalInformation", cascade = CascadeType.ALL, orphanRemoval = true)
     List<WellInformation> wellInformation = new ArrayList<>();
+
+
+
+
+
+
+
     @OneToOne(mappedBy = "generalInformation", cascade = CascadeType.ALL, orphanRemoval = true)
     private SubSurface subSurface;
     @OneToOne(mappedBy = "generalInformation", cascade = CascadeType.ALL, orphanRemoval = true)

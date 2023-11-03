@@ -1,0 +1,24 @@
+package com.ceraphi.entities;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import javax.persistence.*;
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class EmissionsData {
+    @GeneratedValue(strategy= GenerationType.IDENTITY)
+    private Long id;
+    private String currentCarbon;
+    private String currentGhg;
+    private String gasCarbon;
+    private String gasGhg;
+    private String oilCarbon;
+    private String oilGhg;
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "general_Information_id")
+    private GeneralInformation generalInformation;
+}

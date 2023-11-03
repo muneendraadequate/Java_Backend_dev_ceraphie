@@ -12,4 +12,5 @@ public class OpexChartResponse {
     private int percentage;
     private BigDecimal opex;
     private BigDecimal NPV;
+    private BigDecimal lcoh;
 }

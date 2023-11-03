@@ -24,7 +24,13 @@ public class DashBoard {
         List<GeographicalAnalysis> WellsByCountry = dashBoardService.getTheWellsByCountry(userId);
         List<WellsByRegion> wellsByRegion = dashBoardService.getProjectTypesByCountryAndUserId(userId);
         List<WellByType> wellType = dashBoardService.getWellCountsByUserId(userId);
-        TotalValues totalValues=new TotalValues( "6MW","40,515","£ 745,346","5","50");
+        int totalProjectsForUser = dashBoardService.getTotalProjectsForUser(userId);
+        int totalMG = dashBoardService.calculateTotalCapacity();
+        int totalCapex = dashBoardService.calculateTotalInvestment();
+        int heatWells = dashBoardService.countHeatWellsWithHeatSelected();
+        int deepWells = dashBoardService.countDeepWellsWithDeepSelected();
+        TotalValues totalValues=new TotalValues(totalProjectsForUser,totalMG,totalCapex,heatWells,deepWells);
+
 
 
         DashBoardResponseDto combinedData = new DashBoardResponseDto(WellsByCountry, wellsByRegion, wellType, totalValues);

@@ -12,4 +12,5 @@ public class CapexChartResponse {
     private int percentage;
     private BigDecimal capex;
     private BigDecimal NPV;
+    private BigDecimal lcoh;
 }

@@ -13,5 +13,6 @@ public class DiscountRateResponse {
     private int percentage;
     private BigDecimal discountRate;
     private BigDecimal NPV;
+    private BigDecimal lcoh;
 
 }

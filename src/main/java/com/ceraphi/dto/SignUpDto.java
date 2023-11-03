@@ -14,15 +14,10 @@ public class SignUpDto {
     @NotBlank(message = "firstName field can't be empty")
     private String firstName;
     @NotBlank(message = "lastName field can't be empty")
-    private String lastName;
+    private String surName;
     @NotBlank(message = "email field can't be empty")
     @Email
-    private String username;
-    @NotBlank
-    private String type;
-    @NotBlank
-    private String clientId;
-    @NotBlank(message="password field can't be empty")
-    private String password;
+    private String email;
+    private String role ;
 
 }
