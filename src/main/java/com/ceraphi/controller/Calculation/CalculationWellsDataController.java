@@ -35,7 +35,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api")
 @CrossOrigin("*")
-public class CalculationWellsDataController {
+public class  CalculationWellsDataController {
     public static double discount_rate=3.5;
     public static double selling_price=0.11;
     public static int deepNoOfWells;
