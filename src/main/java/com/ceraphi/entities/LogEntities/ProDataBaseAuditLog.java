@@ -1,5 +1,6 @@
-package com.ceraphi.entities.Demo;
+package com.ceraphi.entities.LogEntities;
 
+import ENUM.OperationType;
 import com.ceraphi.entities.MasterDataTables.ProDataBaseModel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -33,4 +34,7 @@ public class ProDataBaseAuditLog {
     private String newValue;
 
     private LocalDateTime timestamp;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "operation_type")
+    private OperationType operationType;
 }

@@ -18,4 +18,10 @@ public class EstimatedCostCapexDeep {
     private String operation;
     private double cost;
     private String perWell;
+
+    public EstimatedCostCapexDeep(EstimatedCostCapexDeep estimatedCostCapexDeep) {
+        this.operation = estimatedCostCapexDeep.getOperation();
+        this.cost = estimatedCostCapexDeep.getCost();
+        this.perWell = estimatedCostCapexDeep.getPerWell();
+    }
 }
