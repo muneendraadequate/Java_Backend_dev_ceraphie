@@ -6,12 +6,14 @@ import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 import javax.persistence.GenerationType;
+import java.io.Serializable;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
 @Table(name = "estimated_cost_capex_deep")
-public class EstimatedCostCapexDeep {
+public class EstimatedCostCapexDeep implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

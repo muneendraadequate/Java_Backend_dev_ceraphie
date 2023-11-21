@@ -78,6 +78,12 @@ public class DbUpdateController {
         ApiResponseData<?> response = ApiResponseData.builder().message("update successfully").status(HttpStatus.OK.value()).build();
         return ResponseEntity.ok(response);
     }
+    @GetMapping("/restore/capexDeep/{changeSetId}")
+    public ResponseEntity<?> restoreDeepCapexChangeSet(@PathVariable Long changeSetId) {
+        dbUpdateService.restoreDeepCapexChangeSet(changeSetId);
+        ApiResponseData<?> response = ApiResponseData.builder().message("restored successfully").status(HttpStatus.OK.value()).build();
+        return ResponseEntity.ok(response);
+    }
     @GetMapping("/getEstCostCapexDeepList")
     public ResponseEntity<?> getTheDataListEst_Cost_Capex_Deep() {
         List<EstimatedCostCapexDeepDto> theDataList = dbUpdateService.getTheDataListEst_Cost_Capex_Deep();
@@ -86,7 +92,7 @@ public class DbUpdateController {
     }
 //estimated cost capex deep end //////////////////////////////
     @PutMapping("/estCostCapexHP")
-    public ResponseEntity<?> estimated_cost_Capex_HP(@RequestBody EstimatedCostCapexHPDto estimatedCostCapexHPDto) {
+    public ResponseEntity<?> estimated_cost_Capex_HP(@RequestBody List<EstimatedCostCapexHPDto> estimatedCostCapexHPDto) {
         dbUpdateService.estimated_cost_Capex_HP(estimatedCostCapexHPDto);
         ApiResponseData<?> response = ApiResponseData.builder().message("update successfully").status(HttpStatus.OK.value()).build();
         return ResponseEntity.ok(response);
@@ -98,9 +104,9 @@ public class DbUpdateController {
         ApiResponseData<?> response = ApiResponseData.builder().data(theDataList).message("successfully").status(HttpStatus.OK.value()).build();
         return ResponseEntity.ok(response);
     }
-
+//estimated cost opex deep start //////////////////////////////
     @PutMapping("/estCostOpexDeep")
-    public ResponseEntity<?> estimated_cost_Opex_Deep(@RequestBody EstimatedCostOpexDeepDto estimatedCostOpexDeepDto) {
+    public ResponseEntity<?> estimated_cost_Opex_Deep(@RequestBody List<EstimatedCostOpexDeepDto> estimatedCostOpexDeepDto) {
         dbUpdateService.estimated_cost_Opex_Deep(estimatedCostOpexDeepDto);
         ApiResponseData<?> response = ApiResponseData.builder().message("update successfully").status(HttpStatus.OK.value()).build();
         return ResponseEntity.ok(response);
@@ -112,8 +118,12 @@ public class DbUpdateController {
         ApiResponseData<?> response = ApiResponseData.builder().data(theDataList).message("successfully").status(HttpStatus.OK.value()).build();
         return ResponseEntity.ok(response);
     }
+//estimated cost opex deep end //////////////////////////////`
+
+
+//estimated cost opex hp start //////////////////////////////
     @PutMapping("/estCostOpexHP")
-    public ResponseEntity<?> estimated_cost_Opex_HP(@RequestBody EstimatedCostOpexHpDto estimatedCostOpexHpDto) {
+    public ResponseEntity<?> estimated_cost_Opex_HP(@RequestBody List<EstimatedCostOpexHpDto> estimatedCostOpexHpDto) {
         dbUpdateService.estimated_cost_Opex_HP(estimatedCostOpexHpDto);
 
         ApiResponseData<?> response = ApiResponseData.builder().message("update successfully").status(HttpStatus.OK.value()).build();
@@ -126,8 +136,10 @@ public class DbUpdateController {
         ApiResponseData<?> response = ApiResponseData.builder().data(theDataList).message("successfully").status(HttpStatus.OK.value()).build();
         return ResponseEntity.ok(response);
     }
+    //estimated cost opex hp end //////////////////////////////
+    //gel data well start //////////////////////////////
     @PutMapping("/gelDataWell")
-    public ResponseEntity<?> gelDataWellData(@RequestBody GelDataWellDto gelDataWellDto) {
+    public ResponseEntity<?> gelDataWellData(@RequestBody List<GelDataWellDto> gelDataWellDto) {
         dbUpdateService.gelDataWell(gelDataWellDto);
         ApiResponseData<?> response = ApiResponseData.builder().message("update successfully").status(HttpStatus.OK.value()).build();
         return ResponseEntity.ok(response);
@@ -139,11 +151,11 @@ public class DbUpdateController {
         ApiResponseData<?> response = ApiResponseData.builder().data(theDataList).message("successfully").status(HttpStatus.OK.value()).build();
         return ResponseEntity.ok(response);
     }
+//gel data well end //////////////////////////////
 
-
-
+//heat load fuel start //////////////////////////////
     @PutMapping("/heatLoadFuel")
-    public ResponseEntity<?> heatLoadFuel(@RequestBody HeatLoadFuelsDto heatLoadFuelsDto) {
+    public ResponseEntity<?> heatLoadFuel(@RequestBody List<HeatLoadFuelsDto> heatLoadFuelsDto) {
         dbUpdateService.heatLoadFuelsData(heatLoadFuelsDto);
         ApiResponseData<?> response = ApiResponseData.builder().message("update successfully").status(HttpStatus.OK.value()).build();
         return ResponseEntity.ok(response);
@@ -155,6 +167,7 @@ public class DbUpdateController {
         ApiResponseData<?> response = ApiResponseData.builder().data(theDataList).message("successfully").status(HttpStatus.OK.value()).build();
         return ResponseEntity.ok(response);
     }
+//heat load fuel end //////////////////////////////
 //testing download feature
 @GetMapping("/download")
 public ResponseEntity<byte[]> downloadProData() {

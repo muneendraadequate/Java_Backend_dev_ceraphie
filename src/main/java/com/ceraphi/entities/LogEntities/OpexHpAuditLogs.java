@@ -1,8 +1,8 @@
 package com.ceraphi.entities.LogEntities;
 
 import ENUM.OperationType;
-import com.ceraphi.entities.MasterDataTables.EstimatedCostCapexDeep;
-import com.ceraphi.entities.MasterDataTables.ProDataBaseModel;
+import com.ceraphi.entities.MasterDataTables.EstimatedCostOpexDeep;
+import com.ceraphi.entities.MasterDataTables.EstimatedCostOpexHP;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -13,19 +13,19 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(name = "capexDeep_audit_log")
-public class CapexDeepAuditLogs {
+@Table(name = "OpexHpAuditLogs")
+public class OpexHpAuditLogs {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "CostCapexDeep_id")
-    private EstimatedCostCapexDeep CostCapexDeep;
+    @JoinColumn(name = "CostOpexHp_id")
+    private EstimatedCostOpexHP CostCapexHp;
 
     @ManyToOne
     @JoinColumn(name = "change_set_id")
-    private ChangesSetCapexDeep changeSet;
+    private OpexHpChangesSet changeSet;
 
     private String fieldName;
 

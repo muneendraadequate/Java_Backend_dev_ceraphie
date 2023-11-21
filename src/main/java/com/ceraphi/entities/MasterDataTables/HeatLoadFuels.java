@@ -21,5 +21,12 @@ public class HeatLoadFuels {
     private String nox;
     private String noxN;
     private String ghg;
-
+public HeatLoadFuels(HeatLoadFuels heatLoadFuels){
+    this.fuelType = heatLoadFuels.getFuelType();
+    this.efficiency = heatLoadFuels.getEfficiency();
+    this.carbon = heatLoadFuels.getCarbon();
+    this.nox = heatLoadFuels.getNox();
+    this.noxN = heatLoadFuels.getNoxN();
+    this.ghg = heatLoadFuels.getGhg();
+}
 }

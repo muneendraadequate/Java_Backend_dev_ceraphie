@@ -25,4 +25,11 @@ public class GelDataWell {
     private String wellOutletTemp;
 
     private String capacity;
+    public  GelDataWell(GelDataWell gelDataWell){
+        this.tempRequired = gelDataWell.getTempRequired();
+        this.flowRate = gelDataWell.getFlowRate();
+        this.COP = gelDataWell.getCOP();
+        this.wellOutletTemp = gelDataWell.getWellOutletTemp();
+        this.capacity = gelDataWell.getCapacity();
+    }
 }

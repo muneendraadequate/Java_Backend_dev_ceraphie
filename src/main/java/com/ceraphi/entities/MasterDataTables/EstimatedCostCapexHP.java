@@ -19,4 +19,10 @@ public class EstimatedCostCapexHP {
     private String operation;
     private double cost;
     private String perWell;
+
+    public EstimatedCostCapexHP(EstimatedCostCapexHP estimatedCostCapexHP) {
+        this.operation = estimatedCostCapexHP.getOperation();
+        this.cost = estimatedCostCapexHP.getCost();
+        this.perWell = estimatedCostCapexHP.getPerWell();
+    }
 }

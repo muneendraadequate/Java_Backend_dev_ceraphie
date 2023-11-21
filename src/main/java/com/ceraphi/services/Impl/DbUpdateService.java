@@ -3,16 +3,10 @@ package com.ceraphi.services.Impl;
 import ENUM.OperationType;
 import com.ceraphi.dto.MasterDataTablesDto.*;
 import com.ceraphi.dto.ProDataBaseModelDto;
-import com.ceraphi.entities.LogEntities.CapexDeepAuditLogs;
-import com.ceraphi.entities.LogEntities.ChangeSet;
-import com.ceraphi.entities.LogEntities.ChangesSetCapexDeep;
-import com.ceraphi.entities.LogEntities.ProDataBaseAuditLog;
+import com.ceraphi.entities.LogEntities.*;
 import com.ceraphi.entities.MasterDataTables.*;
 import com.ceraphi.repository.*;
-import com.ceraphi.repository.LogRepo.CapexDeepAuditLogsRepo;
-import com.ceraphi.repository.LogRepo.ChangeSetRepository;
-import com.ceraphi.repository.LogRepo.ChangesSetCapexDeepRepo;
-import com.ceraphi.repository.LogRepo.ProDataBaseAuditLogRepository;
+import com.ceraphi.repository.LogRepo.*;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -34,7 +28,16 @@ public class DbUpdateService {
     private CapexDeepAuditLogsRepo capexDeepAuditLogsRepo;
     @Autowired
     private ProDataBaseAuditLogRepository logRepository;
-
+    @Autowired
+    private OpexDeepChangesSetRepo opexDeepChangesSetRepo;
+    @Autowired
+    private OpexDeepAuditLogsRepo opexDeepAuditLogsRepo;
+    @Autowired
+    private EstimatedCostOpexDeepRepo estimatedCostOpexDeepRepo;
+   @Autowired
+    private CapexHpAuditLogsRepo capexHpAuditLogsRepo;
+   @Autowired
+   private ChangesSetCapexHpRepo changesSetCapexHpRepo;
     @Autowired
     private ChangeSetRepository changeSetRepository;
     @Autowired
@@ -44,14 +47,47 @@ public class DbUpdateService {
     @Autowired
     private EstimatedCostCapexHPRepo estimatedCostCapexHPRepo;
 
-    @Autowired
-    private EstimatedCostOpexDeepRepo estimatedCostOpexDeepRepo;
+
     @Autowired
     private EstimatedCostOpexHPRepo estimatedCostOpexHPRepo;
     @Autowired
+   private OpexHpAuditLogsRepo opexHpAuditLogsRepo;
+    @Autowired
+    private OpexHpChangesSetRepo opexHpChangesSetRepo;
+
+
+
+
+
+    @Autowired
     private GelDataWellRepo gelDataWellRepo;
     @Autowired
+    private GelDataWellChangesSetRepo gelDataWellChangesSetRepo;
+    @Autowired
+    private GelDataWellAuditLogsRepo gelDataWellAuditLogsRepo;
+
+
+
+
+
+
+
+    @Autowired
     private HeatLoadFuelsRepo heatLoadFuelsRepo;
+    @Autowired
+    private HeatLoadChangesSetRepo heatLoadChangesSetRepo;
+    @Autowired
+    private HeatLoadAuditLogsRepo heatLoadAuditLogsRepo;
+
+
+
+
+
+
+
+
+
+
     @Autowired
     private ModelMapper modelMapper;
     @Autowired
@@ -66,94 +102,12 @@ public class DbUpdateService {
         return all.stream().map(this::mapToDtoProData).collect(Collectors.toList());
 
     }
-// CAPEX DEEP start revert ================================================
-    @Transactional
-    public void estimated_cost_Capex_Deep(List<EstimatedCostCapexDeepDto> estimatedCostCapexDeepDto) {
-        ChangesSetCapexDeep changeSet = new ChangesSetCapexDeep();
-        changeSet.setTimestamp(LocalDateTime.now());
-        changesSetCapexDeepRepo.save(changeSet);
-
-        // Update each record and save the corresponding audit logs
-        for (EstimatedCostCapexDeepDto updatedModel : estimatedCostCapexDeepDto) {
-            if (updatedModel.getId() == null) {
-                // This is a new record, handle accordingly
-                handleCapexDeepNewRecord(updatedModel, changeSet,OperationType.ADD);
-            } else {
-                // This is an existing record, proceed with your existing logic
-                handleCapexDeepExistingRecord(updatedModel, changeSet);
-            }
-        }
-    }
-    private void handleCapexDeepExistingRecord(EstimatedCostCapexDeepDto updatedModel, ChangesSetCapexDeep changeSet) {
-        EstimatedCostCapexDeep estimatedCostCapexDeep = estimatedCostCapexDeepRepo.findById(updatedModel.getId()).orElse(null);
-
-        if (estimatedCostCapexDeep != null) {
-            // Create a copy of the current version for auditing
-            EstimatedCostCapexDeep auditModel = new EstimatedCostCapexDeep(estimatedCostCapexDeep);
-
-            // Update the current version with the new values
-            updateCapexDeepModelFields(estimatedCostCapexDeep, updatedModel);
-
-            // Save the updated entity to create a new version
-            estimatedCostCapexDeepRepo.save(estimatedCostCapexDeep);
-
-            // Save the audit log associated with the change set
-            saveCapexDeepAuditLog(estimatedCostCapexDeep, auditModel, changeSet,OperationType.EDIT);
-        }
-    }
-
-    @Transactional
-    public void saveCapexDeepAuditLog(EstimatedCostCapexDeep currentModel, EstimatedCostCapexDeep auditModel, ChangesSetCapexDeep changeSet, OperationType operationType) {
-        for (Field field : ProDataBaseModel.class.getDeclaredFields()) {
-            try {
-                field.setAccessible(true);
-                Object currentValue = field.get(currentModel);
-                Object auditValue = (auditModel != null) ? field.get(auditModel) : null;
-
-                if (!Objects.equals(currentValue, auditValue)) {
-                    capexDeepAuditLogsRepo.save(new CapexDeepAuditLogs(
-                            null,
-                            currentModel,
-                            changeSet,
-                            field.getName(),
-                            (auditValue != null) ? auditValue.toString() : null,
-                            (currentValue != null) ? currentValue.toString() : null,
-                            LocalDateTime.now(),
-                            operationType
-                    ));
-                }
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-    private void handleCapexDeepNewRecord(EstimatedCostCapexDeepDto newRecordDto, ChangesSetCapexDeep changeSet,OperationType operationType) {
-        // Create a new ProDataBaseModel entity for the new record
-        EstimatedCostCapexDeep estimatedCostCapexDeep = mapToEntityEst_Cost_Capex_Deep(newRecordDto);
-
-        // Save the new record to the database
-        estimatedCostCapexDeepRepo.save(estimatedCostCapexDeep);
-
-        // Save the audit log associated with the change set for the new record
-        saveCapexDeepAuditLog(estimatedCostCapexDeep, null, changeSet,operationType);
-    }
-    private void updateCapexDeepModelFields(EstimatedCostCapexDeep currentModel, EstimatedCostCapexDeepDto updatedModel) {
-        currentModel.setCost(updatedModel.getCost());
-        currentModel.setOperation(updatedModel.getOperation());
-        currentModel.setPerWell(updatedModel.getPerWell());
-    }
-// CAPEX DEEP end revert ================================================
     public List<EstimatedCostCapexDeepDto> getTheDataListEst_Cost_Capex_Deep() {
         List<EstimatedCostCapexDeep> all = estimatedCostCapexDeepRepo.findAll();
         return all.stream().map(this::mapToDtoEst_Cost_Capex_Deep).collect(Collectors.toList());
     }
-// end of CAPEX DEEP========================================================
 
-    @Transactional
-    public void estimated_cost_Capex_HP(EstimatedCostCapexHPDto estimatedCostCapexHPDto) {
-        EstimatedCostCapexHP estimatedCostCapexHP = mapToEntityEst_Cost_Capex_HP(estimatedCostCapexHPDto);
-        estimatedCostCapexHPRepo.save(estimatedCostCapexHP);
-    }
+
 
     public List<EstimatedCostCapexHPDto> getTheDataListEst_Cost_Capex_HP() {
         List<EstimatedCostCapexHP> all = estimatedCostCapexHPRepo.findAll();
@@ -161,32 +115,19 @@ public class DbUpdateService {
     }
 
 
-    @Transactional
-    public void estimated_cost_Opex_Deep(EstimatedCostOpexDeepDto estimatedCostOpexDeepDto) {
-        EstimatedCostOpexDeep estimatedCostOpexDeep = mapToEntityEst_Cost_Opex_Deep(estimatedCostOpexDeepDto);
-        estimatedCostOpexDeepRepo.save(estimatedCostOpexDeep);
-    }
+
 
     public List<EstimatedCostOpexDeepDto> getTheDataListEst_Cost_Opex_Deep() {
         List<EstimatedCostOpexDeep> all = estimatedCostOpexDeepRepo.findAll();
         return all.stream().map(this::mapToDtoEst_Cost_Opex_Deep).collect(Collectors.toList());
     }
-    @Transactional
-    public void estimated_cost_Opex_HP(EstimatedCostOpexHpDto estimatedCostOpexHpDto) {
-        EstimatedCostOpexHP estimatedCostOpexHp = mapToEntityEst_Cost_Opex_Hp(estimatedCostOpexHpDto);
-        estimatedCostOpexHPRepo.save(estimatedCostOpexHp);
-    }
+
 
     public List<EstimatedCostOpexHpDto> getTheDataListEst_Cost_Opex_HP() {
         List<EstimatedCostOpexHP> all = estimatedCostOpexHPRepo.findAll();
         return all.stream().map(this::mapToDtoEst_Cost_Opex_HP).collect(Collectors.toList());
     }
 
-    @Transactional
-    public void gelDataWell(GelDataWellDto gelDataWellDto) {
-        GelDataWell gelDataWell = mapToEntityGel_Data_Well(gelDataWellDto);
-        gelDataWellRepo.save(gelDataWell);
-    }
 
     public List<GelDataWellDto> getTheDataListGelDataWell() {
         List<GelDataWell> all = gelDataWellRepo.findAll();
@@ -195,88 +136,16 @@ public class DbUpdateService {
 
 
 
-    @Transactional
-    public void heatLoadFuelsData(HeatLoadFuelsDto heatLoadFuelsDto) {
-        HeatLoadFuels heatLoadFuels = mapToEntityHeatLoadFuel(heatLoadFuelsDto);
-        heatLoadFuelsRepo.save(heatLoadFuels);
-    }
+
 
     public List<HeatLoadFuelsDto> getTheHeatLoadFuelList() {
         List<HeatLoadFuels> all = heatLoadFuelsRepo.findAll();
         return all.stream().map(this::mapToDtoHeatLoadFuel).collect(Collectors.toList());
     }
 
-//    @Transactional
-//    public void updateRecords(List<ProDataBaseModelDto> updatedModels) {
-//        // Create a new change set
-//        ChangeSet changeSet = new ChangeSet();
-//        changeSet.setTimestamp(LocalDateTime.now());
-//        changeSetRepository.save(changeSet);
-//        List<ProDataBaseModel> entityList = updatedModels.stream()
-//                .map(this::mapToEntityProData)
-//                .collect(Collectors.toList());
-//
-//
-//        // Update each record and save the corresponding audit logs
-//        for (ProDataBaseModel updatedModel : entityList) {
-//            ProDataBaseModel currentModel = repository.findById(updatedModel.getId()).orElse(null);
-//
-//            if (currentModel != null) {
-//                // Create a copy of the current version for auditing
-//                ProDataBaseModel auditModel = new ProDataBaseModel(currentModel);
-//
-//                // Update the current version with the new values
-//                currentModel.setGeothermalGradient(updatedModel.getGeothermalGradient());
-//                currentModel.setSteadyStateTemp(updatedModel.getSteadyStateTemp());
-//                currentModel.setKWt(updatedModel.getKWt());
-//                currentModel.setFlowRate(updatedModel.getFlowRate());
-//                currentModel.setPumpingPower(updatedModel.getPumpingPower());
-//                currentModel.setDepth(updatedModel.getDepth());
-//                currentModel.setDelta(updatedModel.getDelta());
-//                currentModel.setPressureLoss(updatedModel.getPressureLoss());
-//                currentModel.setBHT(updatedModel.getBHT());
-//                currentModel.setReturnValue(updatedModel.getReturnValue());
-//
-//
-//
-//
-//
-//
-//                // Update other fields as needed...
-//
-//                // Save the updated entity to create a new version
-//                repository.save(currentModel);
-//
-//                // Save the audit log associated with the change set
-//                saveAuditLog(currentModel, auditModel, changeSet);
-//            }
-//        }
-//    }
-//    @Transactional
-//    public void saveAuditLog(ProDataBaseModel currentModel, ProDataBaseModel auditModel, ChangeSet changeSet) {
-//        for (Field field : ProDataBaseModel.class.getDeclaredFields()) {
-//            try {
-//                field.setAccessible(true);
-//                Object currentValue = field.get(currentModel);
-//                Object auditValue = (auditModel != null) ? field.get(auditModel) : null;
-//
-//                if (!Objects.equals(currentValue, auditValue)) {
-//                    logRepository.save(new ProDataBaseAuditLog(
-//                            null,
-//                            currentModel,
-//                            changeSet,
-//                            field.getName(),
-//                            (auditValue != null) ? auditValue.toString() : null,
-//                            (currentValue != null) ? currentValue.toString() : null,
-//                            LocalDateTime.now()
-//                    ));
-//                }
-//            } catch (IllegalAccessException e) {
-//                e.printStackTrace();
-//            }
-//        }
-//    }
-//testing
+    //updates methods start ============================================================
+
+    //proDatabase update start
 @Transactional
 public void updateRecords(List<ProDataBaseModelDto> updatedModels) {
     // Create a new change set
@@ -363,72 +232,519 @@ public void updateRecords(List<ProDataBaseModelDto> updatedModels) {
 
         // Update other fields as needed...
     }
+//proDatabase base model update end
+//==================================================================================================================//
+
+// CAPEX DEEP start update
+@Transactional
+public void estimated_cost_Capex_Deep(List<EstimatedCostCapexDeepDto> estimatedCostCapexDeepDto) {
+    ChangesSetCapexDeep changeSet = new ChangesSetCapexDeep();
+    changeSet.setTimestamp(LocalDateTime.now());
+    changesSetCapexDeepRepo.save(changeSet);
+
+    // Update each record and save the corresponding audit logs
+    for (EstimatedCostCapexDeepDto updatedModel : estimatedCostCapexDeepDto) {
+        if (updatedModel.getId() == null||updatedModel.getId() == 0) {
+            // This is a new record, handle accordingly
+            handleCapexDeepNewRecord(updatedModel, changeSet,OperationType.ADD);
+        } else {
+            // This is an existing record, proceed with your existing logic
+            handleCapexDeepExistingRecord(updatedModel, changeSet);
+        }
+    }
+}
+    private void handleCapexDeepExistingRecord(EstimatedCostCapexDeepDto updatedModel, ChangesSetCapexDeep changeSet) {
+        EstimatedCostCapexDeep estimatedCostCapexDeep = estimatedCostCapexDeepRepo.findById(updatedModel.getId()).orElse(null);
+
+        if (estimatedCostCapexDeep != null) {
+            // Create a copy of the current version for auditing
+            EstimatedCostCapexDeep auditModel = new EstimatedCostCapexDeep(estimatedCostCapexDeep);
+
+            // Update the current version with the new values
+            updateCapexDeepModelFields(estimatedCostCapexDeep, updatedModel);
+
+            // Save the updated entity to create a new version
+            estimatedCostCapexDeepRepo.save(estimatedCostCapexDeep);
+
+            // Save the audit log associated with the change set
+            saveCapexDeepAuditLog(estimatedCostCapexDeep, auditModel, changeSet,OperationType.EDIT);
+        }
+    }
+
+    @Transactional
+    public void saveCapexDeepAuditLog(EstimatedCostCapexDeep currentModel, EstimatedCostCapexDeep auditModel, ChangesSetCapexDeep changeSet, OperationType operationType) {
+        for (Field field : EstimatedCostCapexDeep.class.getDeclaredFields()) {
+            try {
+                field.setAccessible(true);
+                Object currentValue = field.get(currentModel);
+                Object auditValue = (auditModel != null) ? field.get(auditModel) : null;
+
+                if (!Objects.equals(currentValue, auditValue)) {
+                    capexDeepAuditLogsRepo.save(new CapexDeepAuditLogs(
+                            null,
+                            currentModel,
+                            changeSet,
+                            field.getName(),
+                            (auditValue != null) ? auditValue.toString() : null,
+                            (currentValue != null) ? currentValue.toString() : null,
+                            LocalDateTime.now(),
+                            operationType
+                    ));
+                }
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+    private void handleCapexDeepNewRecord(EstimatedCostCapexDeepDto newRecordDto, ChangesSetCapexDeep changeSet,OperationType operationType) {
+        // Create a new ProDataBaseModel entity for the new record
+        EstimatedCostCapexDeep estimatedCostCapexDeep = mapToEntityEst_Cost_Capex_Deep(newRecordDto);
+
+        // Save the new record to the database
+        estimatedCostCapexDeepRepo.save(estimatedCostCapexDeep);
+
+        // Save the audit log associated with the change set for the new record
+        saveCapexDeepAuditLog(estimatedCostCapexDeep, null, changeSet,operationType);
+    }
+    private void updateCapexDeepModelFields(EstimatedCostCapexDeep currentModel, EstimatedCostCapexDeepDto updatedModel) {
+        currentModel.setCost(updatedModel.getCost());
+        currentModel.setOperation(updatedModel.getOperation());
+        currentModel.setPerWell(updatedModel.getPerWell());
+    }
+// CAPEX DEEP end update ================================================
+//CAPEX HP start update
+@Transactional
+public void estimated_cost_Capex_HP(List<EstimatedCostCapexHPDto> updatedModels) {
+    // Create a new change set
+    ChangesSetCapexHp changeSet = new ChangesSetCapexHp();
+    changeSet.setTimestamp(LocalDateTime.now());
+    changesSetCapexHpRepo.save(changeSet);
+
+    // Update each record and save the corresponding audit logs
+    for (EstimatedCostCapexHPDto updatedModel : updatedModels) {
+        if (updatedModel.getId() == null) {
+            // This is a new record, handle accordingly
+            handleCapexHpNewRecord(updatedModel, changeSet,OperationType.ADD);
+        } else {
+            // This is an existing record, proceed with your existing logic
+            handleCapexHpExistingRecord(updatedModel, changeSet);
+        }
+    }
+}  private void handleCapexHpExistingRecord(EstimatedCostCapexHPDto updatedModel, ChangesSetCapexHp changeSet) {
+        EstimatedCostCapexHP currentModel = estimatedCostCapexHPRepo.findById(updatedModel.getId()).orElse(null);
+
+        if (currentModel != null) {
+            // Create a copy of the current version for auditing
+            EstimatedCostCapexHP auditModel = new EstimatedCostCapexHP(currentModel);
+
+            // Update the current version with the new values
+            updateCapexHpModelFields(currentModel, updatedModel);
+
+            // Save the updated entity to create a new version
+            estimatedCostCapexHPRepo.save(currentModel);
+
+            // Save the audit log associated with the change set
+            saveCapexHPAuditLog(currentModel, auditModel, changeSet,OperationType.EDIT);
+        }
+    }
+    @Transactional
+    public void saveCapexHPAuditLog(EstimatedCostCapexHP currentModel, EstimatedCostCapexHP auditModel, ChangesSetCapexHp changeSet, OperationType operationType) {
+        for (Field field : EstimatedCostCapexHP.class.getDeclaredFields()) {
+            try {
+                field.setAccessible(true);
+                Object currentValue = field.get(currentModel);
+                Object auditValue = (auditModel != null) ? field.get(auditModel) : null;
+
+                if (!Objects.equals(currentValue, auditValue)) {
+                    capexHpAuditLogsRepo.save(new CapexHpAuditLogs(
+                            null,
+                            currentModel,
+                            changeSet,
+                            field.getName(),
+                            (auditValue != null) ? auditValue.toString() : null,
+                            (currentValue != null) ? currentValue.toString() : null,
+                            LocalDateTime.now(),
+                            operationType
+                    ));
+                }
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+    private void handleCapexHpNewRecord(EstimatedCostCapexHPDto newRecordDto, ChangesSetCapexHp changeSet,OperationType operationType) {
+        // Create a new ProDataBaseModel entity for the new record
+        EstimatedCostCapexHP newRecord = mapToEntityEst_Cost_Capex_HP(newRecordDto);
+
+        // Save the new record to the database
+        estimatedCostCapexHPRepo.save(newRecord);
+
+        // Save the audit log associated with the change set for the new record
+        saveCapexHPAuditLog(newRecord, null, changeSet,operationType);
+    }
+    private void updateCapexHpModelFields(EstimatedCostCapexHP currentModel, EstimatedCostCapexHPDto updatedModel) {
+        currentModel.setCost(updatedModel.getCost());
+        currentModel.setOperation(updatedModel.getOperation());
+        currentModel.setPerWell(updatedModel.getPerWell());
+    }
+//Capex HP end update
+
+    //OPEX Deep start update
+
+    @Transactional
+//    estimatedCostOpexDeepRepo
+//    opexDeepAuditLogsRepo
+//    opexDeepChangesSetRepo
+    public void estimated_cost_Opex_Deep(List<EstimatedCostOpexDeepDto> updatedModels) {
+        // Create a new change set
+        OpexDeepChangesSet changeSet = new OpexDeepChangesSet();
+        changeSet.setTimestamp(LocalDateTime.now());
+        opexDeepChangesSetRepo.save(changeSet);
+
+        // Update each record and save the corresponding audit logs
+        for (EstimatedCostOpexDeepDto updatedModel : updatedModels) {
+            if (updatedModel.getId() == null) {
+                // This is a new record, handle accordingly
+                OpexDeepHandleNewRecord(updatedModel, changeSet,OperationType.ADD);
+            } else {
+                // This is an existing record, proceed with your existing logic
+                opexDeepHandleExistingRecord(updatedModel, changeSet);
+            }
+        }
+    }
+    private void opexDeepHandleExistingRecord(EstimatedCostOpexDeepDto updatedModel, OpexDeepChangesSet changeSet) {
+        EstimatedCostOpexDeep currentModel = estimatedCostOpexDeepRepo.findById(updatedModel.getId()).orElse(null);
+
+        if (currentModel != null) {
+            // Create a copy of the current version for auditing
+            EstimatedCostOpexDeep auditModel = new EstimatedCostOpexDeep(currentModel);
+
+            // Update the current version with the new values
+            opexDeepUpdateModelFields(currentModel, updatedModel);
+
+            // Save the updated entity to create a new version
+            estimatedCostOpexDeepRepo.save(currentModel);
+
+            // Save the audit log associated with the change set
+            opexDeepSaveAuditLog(currentModel, auditModel, changeSet,OperationType.EDIT);
+        }
+    }
+    @Transactional
+    public void opexDeepSaveAuditLog(EstimatedCostOpexDeep currentModel, EstimatedCostOpexDeep auditModel, OpexDeepChangesSet changeSet, OperationType operationType) {
+        for (Field field : EstimatedCostOpexDeep.class.getDeclaredFields()) {
+            try {
+                field.setAccessible(true);
+                Object currentValue = field.get(currentModel);
+                Object auditValue = (auditModel != null) ? field.get(auditModel) : null;
+
+                if (!Objects.equals(currentValue, auditValue)) {
+                    opexDeepAuditLogsRepo.save(new OpexDeepAuditLogs(
+                            null,
+                            currentModel,
+                            changeSet,
+                            field.getName(),
+                            (auditValue != null) ? auditValue.toString() : null,
+                            (currentValue != null) ? currentValue.toString() : null,
+                            LocalDateTime.now(),
+                            operationType
+                    ));
+                }
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+    private void OpexDeepHandleNewRecord(EstimatedCostOpexDeepDto newRecordDto, OpexDeepChangesSet changeSet,OperationType operationType) {
+        // Create a new ProDataBaseModel entity for the new record
+        EstimatedCostOpexDeep newRecord = mapToEntityEst_Cost_Opex_Deep(newRecordDto);
+
+        // Save the new record to the database
+        estimatedCostOpexDeepRepo.save(newRecord);
+
+        // Save the audit log associated with the change set for the new record
+        opexDeepSaveAuditLog(newRecord, null, changeSet,operationType);
+    }
+
+    private void opexDeepUpdateModelFields(EstimatedCostOpexDeep currentModel, EstimatedCostOpexDeepDto updatedModel) {
+            currentModel.setCost(updatedModel.getCost());
+            currentModel.setOperation(updatedModel.getOperation());
+            currentModel.setPerWell(updatedModel.getPerWell());
+        }
+        // Update other fields as needed...
+
+
+
+    //OPEX Deep end update
+
+
+//Opex Hp start update
+    @Transactional
+//    estimatedCostOpexHPRepo
+//    opexHpAuditLogsRepo
+//    opexHpChangesSetRepo
+    public void estimated_cost_Opex_HP(List<EstimatedCostOpexHpDto> updatedModels) {
+        // Create a new change set
+        OpexHpChangesSet changeSet = new OpexHpChangesSet();
+        changeSet.setTimestamp(LocalDateTime.now());
+        opexHpChangesSetRepo.save(changeSet);
+
+        // Update each record and save the corresponding audit logs
+        for (EstimatedCostOpexHpDto updatedModel : updatedModels) {
+            if (updatedModel.getId() == null) {
+                // This is a new record, handle accordingly
+                opexHpHandleNewRecord(updatedModel, changeSet,OperationType.ADD);
+            } else {
+                // This is an existing record, proceed with your existing logic
+                opexHpHandleExistingRecord(updatedModel, changeSet);
+            }
+        }
+    }
+
+    private void opexHpHandleExistingRecord(EstimatedCostOpexHpDto updatedModel, OpexHpChangesSet changeSet) {
+        EstimatedCostOpexHP currentModel = estimatedCostOpexHPRepo.findById(updatedModel.getId()).orElse(null);
+
+        if (currentModel != null) {
+            // Create a copy of the current version for auditing
+            EstimatedCostOpexHP auditModel = new EstimatedCostOpexHP(currentModel);
+
+            // Update the current version with the new values
+            opexHpUpdateModelFields(currentModel, updatedModel);
+
+            // Save the updated entity to create a new version
+            estimatedCostOpexHPRepo.save(currentModel);
+
+            // Save the audit log associated with the change set
+            opexHpSaveAuditLog(currentModel, auditModel, changeSet,OperationType.EDIT);
+        }
+    }
+    @Transactional
+    public void opexHpSaveAuditLog(EstimatedCostOpexHP currentModel, EstimatedCostOpexHP auditModel, OpexHpChangesSet changeSet, OperationType operationType) {
+        for (Field field : EstimatedCostOpexHP.class.getDeclaredFields()) {
+            try {
+                field.setAccessible(true);
+                Object currentValue = field.get(currentModel);
+                Object auditValue = (auditModel != null) ? field.get(auditModel) : null;
+
+                if (!Objects.equals(currentValue, auditValue)) {
+                    opexHpAuditLogsRepo.save(new OpexHpAuditLogs(
+                            null,
+                            currentModel,
+                            changeSet,
+                            field.getName(),
+                            (auditValue != null) ? auditValue.toString() : null,
+                            (currentValue != null) ? currentValue.toString() : null,
+                            LocalDateTime.now(),
+                            operationType
+                    ));
+                }
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+    private void opexHpHandleNewRecord(EstimatedCostOpexHpDto newRecordDto, OpexHpChangesSet changeSet,OperationType operationType) {
+        // Create a new ProDataBaseModel entity for the new record
+        EstimatedCostOpexHP newRecord = mapToEntityEst_Cost_Opex_Hp(newRecordDto);
+
+        // Save the new record to the database
+        estimatedCostOpexHPRepo.save(newRecord);
+
+        // Save the audit log associated with the change set for the new record
+        opexHpSaveAuditLog(newRecord, null, changeSet,operationType);
+    }
+
+    private void opexHpUpdateModelFields(EstimatedCostOpexHP currentModel, EstimatedCostOpexHpDto updatedModel) {
+            currentModel.setCost(updatedModel.getCost());
+            currentModel.setOperation(updatedModel.getOperation());
+            currentModel.setPerWell(updatedModel.getPerWell());
+        }
+        // Update other fields as needed...
+
+    //Opex Hp end update
+//GelDataWell start update
+//    gelDataWellRepo
+//    gelDataWellChangesSetRepo
+//    gelDataWellAuditLogsRepo
+    @Transactional
+    public void gelDataWell(List<GelDataWellDto> updatedModels) {
+        // Create a new change set
+        GelDataWellChangesSet changeSet = new GelDataWellChangesSet();
+        changeSet.setTimestamp(LocalDateTime.now());
+        gelDataWellChangesSetRepo.save(changeSet);
+
+        // Update each record and save the corresponding audit logs
+        for (GelDataWellDto updatedModel : updatedModels) {
+            if (updatedModel.getId() == null) {
+                // This is a new record, handle accordingly
+                gelDataWellHandleNewRecord(updatedModel, changeSet,OperationType.ADD);
+            } else {
+                // This is an existing record, proceed with your existing logic
+                gelDataWellHandleExistingRecord(updatedModel, changeSet);
+            }
+        }
+    }
+
+    private void gelDataWellHandleExistingRecord(GelDataWellDto updatedModel, GelDataWellChangesSet changeSet) {
+        GelDataWell currentModel = gelDataWellRepo.findById(updatedModel.getId()).orElse(null);
+
+        if (currentModel != null) {
+            // Create a copy of the current version for auditing
+            GelDataWell auditModel = new GelDataWell(currentModel);
+
+            // Update the current version with the new values
+            gelDataWellUpdateModelFields(currentModel, updatedModel);
+
+            // Save the updated entity to create a new version
+            gelDataWellRepo.save(currentModel);
+
+            // Save the audit log associated with the change set
+            gelDataWellSaveAuditLog(currentModel, auditModel, changeSet,OperationType.EDIT);
+        }
+    }
+    @Transactional
+    public void gelDataWellSaveAuditLog(GelDataWell currentModel, GelDataWell auditModel, GelDataWellChangesSet changeSet, OperationType operationType) {
+        for (Field field : GelDataWell.class.getDeclaredFields()) {
+            try {
+                field.setAccessible(true);
+                Object currentValue = field.get(currentModel);
+                Object auditValue = (auditModel != null) ? field.get(auditModel) : null;
+
+                if (!Objects.equals(currentValue, auditValue)) {
+                    gelDataWellAuditLogsRepo.save(new GelDataWellAuditLogs(
+                            null,
+                            currentModel,
+                            changeSet,
+                            field.getName(),
+                            (auditValue != null) ? auditValue.toString() : null,
+                            (currentValue != null) ? currentValue.toString() : null,
+                            LocalDateTime.now(),
+                            operationType
+                    ));
+                }
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+    private void gelDataWellHandleNewRecord(GelDataWellDto newRecordDto, GelDataWellChangesSet changeSet,OperationType operationType) {
+        // Create a new ProDataBaseModel entity for the new record
+        GelDataWell newRecord = mapToEntityGel_Data_Well(newRecordDto);
+
+        // Save the new record to the database
+        gelDataWellRepo.save(newRecord);
+
+        // Save the audit log associated with the change set for the new record
+        gelDataWellSaveAuditLog(newRecord, null, changeSet,operationType);
+    }
+
+    private void gelDataWellUpdateModelFields(GelDataWell currentModel, GelDataWellDto updatedModel) {
+        currentModel.setTempRequired(updatedModel.getTempRequired());
+        currentModel.setFlowRate(updatedModel.getFlowRate());
+        currentModel.setCOP(updatedModel.getCOP());
+        currentModel.setWellOutletTemp(updatedModel.getWellOutletTemp());
+        currentModel.setCapacity(updatedModel.getCapacity());
+
+        // Update other fields as needed...
+    }
+
+
+//GelDataWell end update
+//HeatLoadFuel start update
+@Transactional
+//    heatLoadAuditLogsRepo
+//    heatLoadChangesSetRepo
+//    heatLoadFuelsRepo
+public void heatLoadFuelsData(List<HeatLoadFuelsDto> updatedModels) {
+    // Create a new change set
+    HeatLoadChangesSet changeSet = new HeatLoadChangesSet();
+    changeSet.setTimestamp(LocalDateTime.now());
+    heatLoadChangesSetRepo.save(changeSet);
+
+    // Update each record and save the corresponding audit logs
+    for (HeatLoadFuelsDto updatedModel : updatedModels) {
+        if (updatedModel.getId() == null) {
+            // This is a new record, handle accordingly
+            heatLoadHandleNewRecord(updatedModel, changeSet,OperationType.ADD);
+        } else {
+            // This is an existing record, proceed with your existing logic
+            heatLoadHandleExistingRecord(updatedModel, changeSet);
+        }
+    }
+}
+
+    private void heatLoadHandleExistingRecord(HeatLoadFuelsDto updatedModel, HeatLoadChangesSet changeSet) {
+        HeatLoadFuels currentModel = heatLoadFuelsRepo.findById(updatedModel.getId()).orElse(null);
+
+        if (currentModel != null) {
+            // Create a copy of the current version for auditing
+            HeatLoadFuels auditModel = new HeatLoadFuels(currentModel);
+
+            // Update the current version with the new values
+            heatLoadUpdateModelFields(currentModel, updatedModel);
+
+            // Save the updated entity to create a new version
+            heatLoadFuelsRepo.save(currentModel);
+
+            // Save the audit log associated with the change set
+            HeatLoadSaveAuditLog(currentModel, auditModel, changeSet,OperationType.EDIT);
+        }
+    }
+    @Transactional
+    public void HeatLoadSaveAuditLog(HeatLoadFuels currentModel, HeatLoadFuels auditModel, HeatLoadChangesSet changeSet, OperationType operationType) {
+        for (Field field : HeatLoadFuels.class.getDeclaredFields()) {
+            try {
+                field.setAccessible(true);
+                Object currentValue = field.get(currentModel);
+                Object auditValue = (auditModel != null) ? field.get(auditModel) : null;
+
+                if (!Objects.equals(currentValue, auditValue)) {
+                    heatLoadAuditLogsRepo.save(new HeatLoadAuditLogs(
+                            null,
+                            currentModel,
+                            changeSet,
+                            field.getName(),
+                            (auditValue != null) ? auditValue.toString() : null,
+                            (currentValue != null) ? currentValue.toString() : null,
+                            LocalDateTime.now(),
+                            operationType
+                    ));
+                }
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+    private void heatLoadHandleNewRecord(HeatLoadFuelsDto newRecordDto, HeatLoadChangesSet changeSet,OperationType operationType) {
+        // Create a new ProDataBaseModel entity for the new record
+        HeatLoadFuels newRecord = mapToEntityHeatLoadFuel(newRecordDto);
+
+        // Save the new record to the database
+        heatLoadFuelsRepo.save(newRecord);
+
+        // Save the audit log associated with the change set for the new record
+        HeatLoadSaveAuditLog(newRecord, null, changeSet,operationType);
+    }
+
+    private void heatLoadUpdateModelFields(HeatLoadFuels currentModel, HeatLoadFuelsDto updatedModel) {
+        currentModel.setFuelType(updatedModel.getFuelType());
+        currentModel.setEfficiency(updatedModel.getEfficiency());
+        currentModel.setCarbon(updatedModel.getCarbon());
+        currentModel.setNox(updatedModel.getNox());
+        currentModel.setNoxN(updatedModel.getNoxN());
+        currentModel.setGhg(updatedModel.getGhg());
+
+        // Update other fields as needed...
+    }
+//HeatLoadFuel end update
 
 
 
 
 
-    //testing
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// restore methods start
 
-//    @Transactional
-//    public void revertChangeSet(Long changeSetId) {
-//        // Fetch all logs for the change set
-//        List<ProDataBaseAuditLog> auditLogs = logRepository.findByChangeSetId(changeSetId);
-//
-//        // Revert each change in the change set
-//        for (ProDataBaseAuditLog auditLog : auditLogs) {
-//            ProDataBaseModel currentModel = repository.findById(auditLog.getProdata().getId()).orElse(null);
-//
-//            if (currentModel != null) {
-//                // Restore the historical version
-//                restoreHistoricalVersion(currentModel, auditLog);
-//            }
-//        }
-//
-//        // Delete the change set and associated logs
-//        changeSetRepository.deleteById(changeSetId);
-//    }
-//
-//    private void restoreHistoricalVersion(ProDataBaseModel currentModel, ProDataBaseAuditLog auditLog) {
-//        // Restore each field to its historical value
-//        switch (auditLog.getFieldName()) {
-//            case "geothermalGradient":
-//                currentModel.setGeothermalGradient(Integer.parseInt(auditLog.getOldValue()));
-//                break;
-//            case "steadyStateTemp":
-//                currentModel.setSteadyStateTemp(Integer.parseInt(auditLog.getOldValue()));
-//                break;
-//            case "kWt":
-//                currentModel.setKWt(Integer.parseInt(auditLog.getOldValue()));
-//                break;
-//            case "flowRate":
-//                currentModel.setFlowRate(Integer.parseInt(auditLog.getOldValue()));
-//                break;
-//            case "pumpingPower":
-//                currentModel.setPumpingPower(Double.parseDouble(auditLog.getOldValue()));
-//                break;
-//            case "depth":
-//                currentModel.setDepth(Integer.parseInt(auditLog.getOldValue()));
-//                break;
-//            case "delta":
-//                currentModel.setDelta(Integer.parseInt(auditLog.getOldValue()));
-//                break;
-//            case "pressureLoss":
-//                currentModel.setPressureLoss(Double.parseDouble(auditLog.getOldValue()));
-//                break;
-//            case "BHT":
-//                currentModel.setBHT(Integer.parseInt(auditLog.getOldValue()));
-//                break;
-//            case "returnValue":
-//                currentModel.setReturnValue(Double.parseDouble(auditLog.getOldValue()));
-//                break;
-//            // Add cases for other fields as needed
-//        }
-//
-//        // Save the restored entity
-//        repository.save(currentModel);
-//    }
-//testing start/////
+//proDatabase base model restore start
 @Transactional
 public void revertChangeSet(Long changeSetId) {
     // Fetch all logs for the change set
@@ -484,7 +800,7 @@ public void revertChangeSet(Long changeSetId) {
             case "returnValue":
                 currentModel.setReturnValue(Double.parseDouble(auditLog.getOldValue()));
                 break;
-//            // Add cases for other fields as needed
+           // Add cases for other fields as needed
             }
         } else if (auditLog.getOperationType() == OperationType.ADD) {
             // Handle ADD operation (removing newly added row)
@@ -496,7 +812,59 @@ public void revertChangeSet(Long changeSetId) {
         repository.save(currentModel);
     }
 
+//proDatabase restore end
+    //============================================================================================================================
 
+// CapexDeep start Restore =========================================
+
+
+    @Transactional
+    public void restoreDeepCapexChangeSet(Long changeSetId) {
+        // Fetch all logs for the change set
+        List<CapexDeepAuditLogs> auditLogs = capexDeepAuditLogsRepo.findByChangeSetId(changeSetId);
+
+        // Revert each change in the change set
+        for (CapexDeepAuditLogs auditLog : auditLogs) {
+            EstimatedCostCapexDeep currentModel = estimatedCostCapexDeepRepo.findById(auditLog.getCostCapexDeep().getId()).orElse(null);
+
+            if (currentModel != null) {
+                if (auditLog.getOperationType() == OperationType.ADD) {
+                    // If it's an ADD operation, delete the added record
+                    estimatedCostCapexDeepRepo.deleteById(currentModel.getId());
+                } else {
+                    // If it's an EDIT operation, restore the historical version
+                    restoreHistoricalVersion(currentModel, auditLog);
+                }
+            }
+        }
+        changesSetCapexDeepRepo.deleteById(changeSetId);
+    }
+    private void restoreHistoricalVersion(EstimatedCostCapexDeep currentModel, CapexDeepAuditLogs auditLog) {
+        if (auditLog.getOperationType() == OperationType.EDIT) {
+            // Restore each field to its historical value for EDIT operation
+            switch (auditLog.getFieldName()) {
+                case "operation":
+                    currentModel.setOperation(auditLog.getOldValue());
+                    break;
+                case "cost":
+                    currentModel.setCost(Double.parseDouble(auditLog.getOldValue()));
+                    break;
+                case "perWell":
+                    currentModel.setPerWell(auditLog.getOldValue());
+                    break;
+//            // Add cases for other fields as needed
+            }
+        } else if (auditLog.getOperationType() == OperationType.ADD) {
+            // Handle ADD operation (removing newly added row)
+            // This could involve deleting the row or resetting the fields to default values
+            estimatedCostCapexDeepRepo.delete(currentModel);
+        }
+
+        // Save the restored entity
+        estimatedCostCapexDeepRepo.save(currentModel);
+    }
+
+    // CapexDeep end Restore =========================================
 
 
     //===================================Model Mappers================================
