@@ -21,6 +21,7 @@ public class ProDataBaseModelDto {
     private Double pressureLoss;
     private Integer BHT;
     private Double returnValue ;
+    private String comment;
 
 
 }

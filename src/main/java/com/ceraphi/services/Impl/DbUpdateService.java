@@ -181,11 +181,15 @@ public class DbUpdateService {
 
     //proDatabase update start
 @Transactional
-public void updateRecords(List<ProDataBaseModelDto> updatedModels,String comment) {
+public void updateRecords(List<ProDataBaseModelDto> updatedModels) {
     // Create a new change set
     ChangeSet changeSet = new ChangeSet();
     changeSet.setTimestamp(LocalDateTime.now());
-    changeSet.setComment(comment);
+    if (!updatedModels.isEmpty()) {
+        ProDataBaseModelDto firstModel = updatedModels.get(0);
+        changeSet.setComment(firstModel.getComment());
+    }
+
     changeSetRepository.save(changeSet);
 
     // Update each record and save the corresponding audit logs
@@ -272,10 +276,13 @@ public void updateRecords(List<ProDataBaseModelDto> updatedModels,String comment
 
 // CAPEX DEEP start update
 @Transactional
-public void estimated_cost_Capex_Deep(List<EstimatedCostCapexDeepDto> estimatedCostCapexDeepDto,String comment) {
+public void estimated_cost_Capex_Deep(List<EstimatedCostCapexDeepDto> estimatedCostCapexDeepDto) {
     ChangesSetCapexDeep changeSet = new ChangesSetCapexDeep();
     changeSet.setTimestamp(LocalDateTime.now());
-    changeSet.setComment(comment);
+    if (!estimatedCostCapexDeepDto.isEmpty()) {
+        EstimatedCostCapexDeepDto firstModel = estimatedCostCapexDeepDto.get(0);
+        changeSet.setComment(firstModel.getComment());
+    }
     changesSetCapexDeepRepo.save(changeSet);
 
     // Update each record and save the corresponding audit logs
@@ -350,11 +357,14 @@ public void estimated_cost_Capex_Deep(List<EstimatedCostCapexDeepDto> estimatedC
 // CAPEX DEEP end update ================================================
 //CAPEX HP start update
 @Transactional
-public void estimated_cost_Capex_HP(List<EstimatedCostCapexHPDto> updatedModels,String comment) {
+public void estimated_cost_Capex_HP(List<EstimatedCostCapexHPDto> updatedModels) {
     // Create a new change set
     ChangesSetCapexHp changeSet = new ChangesSetCapexHp();
     changeSet.setTimestamp(LocalDateTime.now());
-    changeSet.setComment(comment);
+    if (!updatedModels.isEmpty()) {
+        EstimatedCostCapexHPDto firstModel = updatedModels.get(0);
+        changeSet.setComment(firstModel.getComment());
+    }
     changesSetCapexHpRepo.save(changeSet);
 
     // Update each record and save the corresponding audit logs
@@ -432,11 +442,14 @@ public void estimated_cost_Capex_HP(List<EstimatedCostCapexHPDto> updatedModels,
 //    estimatedCostOpexDeepRepo
 //    opexDeepAuditLogsRepo
 //    opexDeepChangesSetRepo
-    public void estimated_cost_Opex_Deep(List<EstimatedCostOpexDeepDto> updatedModels,String comment) {
+    public void estimated_cost_Opex_Deep(List<EstimatedCostOpexDeepDto> updatedModels) {
         // Create a new change set
         OpexDeepChangesSet changeSet = new OpexDeepChangesSet();
         changeSet.setTimestamp(LocalDateTime.now());
-        changeSet.setComment(comment);
+        if (!updatedModels.isEmpty()) {
+            EstimatedCostOpexDeepDto firstModel = updatedModels.get(0);
+            changeSet.setComment(firstModel.getComment());
+        }
         opexDeepChangesSetRepo.save(changeSet);
 
         // Update each record and save the corresponding audit logs
@@ -520,11 +533,14 @@ public void estimated_cost_Capex_HP(List<EstimatedCostCapexHPDto> updatedModels,
 //    estimatedCostOpexHPRepo
 //    opexHpAuditLogsRepo
 //    opexHpChangesSetRepo
-    public void estimated_cost_Opex_HP(List<EstimatedCostOpexHpDto> updatedModels,String comment) {
+    public void estimated_cost_Opex_HP(List<EstimatedCostOpexHpDto> updatedModels) {
         // Create a new change set
         OpexHpChangesSet changeSet = new OpexHpChangesSet();
         changeSet.setTimestamp(LocalDateTime.now());
-        changeSet.setComment(comment);
+        if (!updatedModels.isEmpty()) {
+            EstimatedCostOpexHpDto firstModel = updatedModels.get(0);
+            changeSet.setComment(firstModel.getComment());
+        }
         opexHpChangesSetRepo.save(changeSet);
 
         // Update each record and save the corresponding audit logs
@@ -605,11 +621,14 @@ public void estimated_cost_Capex_HP(List<EstimatedCostCapexHPDto> updatedModels,
 //    gelDataWellChangesSetRepo
 //    gelDataWellAuditLogsRepo
     @Transactional
-    public void gelDataWell(List<GelDataWellDto> updatedModels,String comment) {
+    public void gelDataWell(List<GelDataWellDto> updatedModels) {
         // Create a new change set
         GelDataWellChangesSet changeSet = new GelDataWellChangesSet();
         changeSet.setTimestamp(LocalDateTime.now());
-        changeSet.setComment(comment);
+        if (!updatedModels.isEmpty()) {
+            GelDataWellDto firstModel = updatedModels.get(0);
+            changeSet.setComment(firstModel.getComment());
+        }
         gelDataWellChangesSetRepo.save(changeSet);
 
         // Update each record and save the corresponding audit logs
@@ -694,11 +713,14 @@ public void estimated_cost_Capex_HP(List<EstimatedCostCapexHPDto> updatedModels,
 //    heatLoadAuditLogsRepo
 //    heatLoadChangesSetRepo
 //    heatLoadFuelsRepo
-public void heatLoadFuelsData(List<HeatLoadFuelsDto> updatedModels,String comment) {
+public void heatLoadFuelsData(List<HeatLoadFuelsDto> updatedModels) {
     // Create a new change set
     HeatLoadChangesSet changeSet = new HeatLoadChangesSet();
     changeSet.setTimestamp(LocalDateTime.now());
-    changeSet.setComment(comment);
+    if (!updatedModels.isEmpty()) {
+        HeatLoadFuelsDto firstModel = updatedModels.get(0);
+        changeSet.setComment(firstModel.getComment());
+    }
     heatLoadChangesSetRepo.save(changeSet);
 
     // Update each record and save the corresponding audit logs

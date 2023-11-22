@@ -14,5 +14,7 @@ public class EstimatedCostCapexDeepDto {
     private String operation;
     private double cost;
     private String perWell;
+    private String comment;
+
 
 }

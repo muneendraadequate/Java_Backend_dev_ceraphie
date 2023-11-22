@@ -21,5 +21,6 @@ public class GelDataWellDto {
     private String wellOutletTemp;
 
     private String capacity;
+    private String comment;
 
 }

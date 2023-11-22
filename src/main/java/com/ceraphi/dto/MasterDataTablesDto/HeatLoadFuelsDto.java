@@ -17,5 +17,6 @@ public class HeatLoadFuelsDto {
     private String nox;
     private String noxN;
     private String ghg;
+    private String comment;
 
 }
