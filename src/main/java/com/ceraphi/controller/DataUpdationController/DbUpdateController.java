@@ -209,7 +209,7 @@ public ResponseEntity<?> getTheChangesSetList() {
     }
     @GetMapping("/getCapexDeepChangesList")
     public ResponseEntity<?> getTheCapexDeepChangesList() {
-        List<ChangesSetCapexDeep> theChangesSetList = dbUpdateService.getTheCapexDeepChangesList();
+        List<ChangeSetDto> theChangesSetList = dbUpdateService.getTheCapexDeepChangesList();
         ApiResponseData<?> response = ApiResponseData.builder().data(theChangesSetList).message("successfully get the list ").status(HttpStatus.OK.value()).build();
         return ResponseEntity.ok(response);
     }
@@ -292,7 +292,7 @@ public ResponseEntity<?> getTheChangesSetList() {
     }
     @GetMapping("/getCapexHpChangesList")
     public ResponseEntity<?> getTheCapexHpChangesList() {
-        List<ChangesSetCapexHp> theChangesSetList = dbUpdateService.getTheCapexHpChangesList();
+        List<ChangeSetDto> theChangesSetList = dbUpdateService.getTheCapexHpChangesList();
         ApiResponseData<?> response = ApiResponseData.builder().data(theChangesSetList).message("successfully get the list ").status(HttpStatus.OK.value()).build();
         return ResponseEntity.ok(response);
     }
@@ -375,7 +375,7 @@ public ResponseEntity<?> getTheChangesSetList() {
     }
     @GetMapping("/getOpexDeepChangesList")
     public ResponseEntity<?> getOpexDeepTheCapChangesList() {
-        List<OpexDeepChangesSet> theChangesSetList = dbUpdateService.getTheOpexDeepChangesList();
+        List<ChangeSetDto> theChangesSetList = dbUpdateService.getTheOpexDeepChangesList();
         ApiResponseData<?> response = ApiResponseData.builder().data(theChangesSetList).message("successfully get the list ").status(HttpStatus.OK.value()).build();
         return ResponseEntity.ok(response);
     }
@@ -462,7 +462,7 @@ public ResponseEntity<?> getTheChangesSetList() {
     }
     @GetMapping("/getOpexHpChangesList")
     public ResponseEntity<?> getOpexHpTheCapChangesList() {
-        List<OpexHpChangesSet> theChangesSetList = dbUpdateService.getTheOpexHpChangesList();
+        List<ChangeSetDto> theChangesSetList = dbUpdateService.getTheOpexHpChangesList();
         ApiResponseData<?> response = ApiResponseData.builder().data(theChangesSetList).message("successfully get the list ").status(HttpStatus.OK.value()).build();
         return ResponseEntity.ok(response);
     }
@@ -547,7 +547,7 @@ public ResponseEntity<?> getTheChangesSetList() {
     }
     @GetMapping("/getGelDataChangesList")
     public ResponseEntity<?> getGelDataTheCapChangesList() {
-        List<GelDataWellChangesSet> theChangesSetList = dbUpdateService.getTheGellDataChangesList();
+        List<ChangeSetDto> theChangesSetList = dbUpdateService.getTheGellDataChangesList();
         ApiResponseData<?> response = ApiResponseData.builder().data(theChangesSetList).message("successfully get the list ").status(HttpStatus.OK.value()).build();
         return ResponseEntity.ok(response);
     }
@@ -634,7 +634,7 @@ public ResponseEntity<?> getTheChangesSetList() {
     }
     @GetMapping("/getHeatLoadChangesList")
     public ResponseEntity<?> getHeatLoadTheCapChangesList() {
-        List<HeatLoadChangesSet> theChangesSetList = dbUpdateService.getTheHeatLoadChangesList();
+        List<ChangeSetDto> theChangesSetList = dbUpdateService.getTheHeatLoadChangesList();
         ApiResponseData<?> response = ApiResponseData.builder().data(theChangesSetList).message("successfully get the list ").status(HttpStatus.OK.value()).build();
         return ResponseEntity.ok(response);
     }

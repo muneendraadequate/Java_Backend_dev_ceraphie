@@ -84,12 +84,43 @@ public class DbUpdateService {
                 .map(changeSet -> new ChangeSetDto(changeSet.getId(), changeSet.getTimestamp(), changeSet.getComment()))
                 .collect(Collectors.toList());
     }
-    public List<ChangesSetCapexDeep>getTheCapexDeepChangesList(){return changesSetCapexDeepRepo.findAll();}
-    public List<ChangesSetCapexHp>getTheCapexHpChangesList(){return changesSetCapexHpRepo.findAll();}
-    public List<OpexDeepChangesSet>getTheOpexDeepChangesList(){return opexDeepChangesSetRepo.findAll();}
-    public List<OpexHpChangesSet>getTheOpexHpChangesList(){return opexHpChangesSetRepo.findAll();}
-    public List<GelDataWellChangesSet>getTheGellDataChangesList(){return gelDataWellChangesSetRepo.findAll();}
-    public List<HeatLoadChangesSet>getTheHeatLoadChangesList(){return heatLoadChangesSetRepo.findAll();}
+    public List<ChangeSetDto>getTheCapexDeepChangesList(){
+        List<ChangesSetCapexDeep> changeSets =changesSetCapexDeepRepo.findAll();
+        return changeSets.stream()
+                .map(changeSet -> new ChangeSetDto(changeSet.getId(), changeSet.getTimestamp(), changeSet.getComment()))
+                .collect(Collectors.toList());
+    }
+    public List<ChangeSetDto>getTheCapexHpChangesList(){
+        List<ChangesSetCapexHp> changeSets = changesSetCapexHpRepo.findAll();
+        return changeSets.stream()
+                .map(changeSet -> new ChangeSetDto(changeSet.getId(), changeSet.getTimestamp(), changeSet.getComment()))
+                .collect(Collectors.toList());
+    }
+    public List<ChangeSetDto>getTheOpexDeepChangesList(){
+        List<OpexDeepChangesSet> changeSets = opexDeepChangesSetRepo.findAll();
+        return changeSets.stream()
+                .map(changeSet -> new ChangeSetDto(changeSet.getId(), changeSet.getTimestamp(), changeSet.getComment()))
+                .collect(Collectors.toList());
+    }
+    public List<ChangeSetDto>getTheOpexHpChangesList(){
+        List<OpexHpChangesSet> changeSets = opexHpChangesSetRepo.findAll();
+        return changeSets.stream()
+                .map(changeSet -> new ChangeSetDto(changeSet.getId(), changeSet.getTimestamp(), changeSet.getComment()))
+                .collect(Collectors.toList());
+    }
+    public List<ChangeSetDto>getTheGellDataChangesList(){
+        List<GelDataWellChangesSet> changeSets = gelDataWellChangesSetRepo.findAll();
+        return changeSets.stream()
+                .map(changeSet -> new ChangeSetDto(changeSet.getId(), changeSet.getTimestamp(), changeSet.getComment()))
+                .collect(Collectors.toList());
+    }
+    public List<ChangeSetDto>getTheHeatLoadChangesList(){
+        List<HeatLoadChangesSet> changeSets = heatLoadChangesSetRepo.findAll();
+        return changeSets.stream()
+                .map(changeSet -> new ChangeSetDto(changeSet.getId(), changeSet.getTimestamp(), changeSet.getComment()))
+                .collect(Collectors.toList());
+
+    }
 
     public List<ProDataBaseModel> getAllProData() {
         return proDataBaseRepository.findAll();
