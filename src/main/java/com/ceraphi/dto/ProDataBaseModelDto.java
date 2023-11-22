@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import javax.persistence.Lob;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -19,5 +21,6 @@ public class ProDataBaseModelDto {
     private Double pressureLoss;
     private Integer BHT;
     private Double returnValue ;
+
 
 }

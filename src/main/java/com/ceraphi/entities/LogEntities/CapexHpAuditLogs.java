@@ -1,7 +1,6 @@
 package com.ceraphi.entities.LogEntities;
 
-import ENUM.OperationType;
-import com.ceraphi.entities.MasterDataTables.EstimatedCostCapexDeep;
+import com.ceraphi.utils.ENUM.OperationType;
 import com.ceraphi.entities.MasterDataTables.EstimatedCostCapexHP;
 import lombok.AllArgsConstructor;
 import lombok.Data;

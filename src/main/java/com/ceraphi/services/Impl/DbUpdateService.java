@@ -1,6 +1,6 @@
 package com.ceraphi.services.Impl;
 
-import ENUM.OperationType;
+import com.ceraphi.utils.ENUM.OperationType;
 import com.ceraphi.dto.MasterDataTablesDto.*;
 import com.ceraphi.dto.ProDataBaseModelDto;
 import com.ceraphi.entities.LogEntities.*;
@@ -66,12 +66,6 @@ public class DbUpdateService {
     @Autowired
     private GelDataWellAuditLogsRepo gelDataWellAuditLogsRepo;
 
-
-
-
-
-
-
     @Autowired
     private HeatLoadFuelsRepo heatLoadFuelsRepo;
     @Autowired
@@ -79,24 +73,55 @@ public class DbUpdateService {
     @Autowired
     private HeatLoadAuditLogsRepo heatLoadAuditLogsRepo;
 
-
-
-
-
-
-
-
-
-
     @Autowired
     private ModelMapper modelMapper;
     @Autowired
     private ChangeLogRepo changeLogRepository;
+
+    public List<ChangeSet>getTheChangesSetList(){return changeSetRepository.findAll();}
+    public List<ChangesSetCapexDeep>getTheCapexDeepChangesList(){return changesSetCapexDeepRepo.findAll();}
+    public List<ChangesSetCapexHp>getTheCapexHpChangesList(){return changesSetCapexHpRepo.findAll();}
+
     public List<ProDataBaseModel> getAllProData() {
         return proDataBaseRepository.findAll();
     }
+    public List<EstimatedCostCapexDeep>getAllCapexDeep(){return estimatedCostCapexDeepRepo.findAll();}
+    public List<EstimatedCostCapexHP>getAllCapexHp(){return estimatedCostCapexHPRepo.findAll();}
+    public List<EstimatedCostOpexDeep>getAllOpexDeep(){return estimatedCostOpexDeepRepo.findAll();}
+    public List<EstimatedCostOpexHP>getAllOpexHp(){return estimatedCostOpexHPRepo.findAll();}
+    public List<GelDataWell>getAllGelData(){return gelDataWellRepo.findAll();}
+    public List<HeatLoadFuels>getAllHeatLoadData(){return heatLoadFuelsRepo.findAll();}
 
-
+    public ProDataBaseModelDto dataFindById(Long id) {
+        ProDataBaseModel proDataBaseModel = proDataBaseRepository.findById(id).get();
+        ProDataBaseModelDto proDataBaseModelDto = mapToDtoProData(proDataBaseModel);
+        return proDataBaseModelDto;
+    }
+    public EstimatedCostOpexDeepDto opexDeepDataFindById(Long id) {
+        EstimatedCostOpexDeep estimatedCostOpexDeep = estimatedCostOpexDeepRepo.findById(id).get();
+        EstimatedCostOpexDeepDto estimatedCostOpexDeepDto = mapToDtoEst_Cost_Opex_Deep(estimatedCostOpexDeep);
+        return estimatedCostOpexDeepDto;
+    }
+    public EstimatedCostCapexHPDto CapexHpDataFindById(Long id) {
+        EstimatedCostCapexHP estimatedCostCapexHp = estimatedCostCapexHPRepo.findById(id).get();
+        EstimatedCostCapexHPDto estimatedCostCapexHpDto = mapToDtoEst_Cost_Capex_HP(estimatedCostCapexHp);
+        return estimatedCostCapexHpDto;
+    }
+    public EstimatedCostCapexDeepDto CapexDeepDataFindById(Long id) {
+        EstimatedCostCapexDeep estimatedCostCapexDeep = estimatedCostCapexDeepRepo.findById(id).get();
+        EstimatedCostCapexDeepDto estimatedCostCapexDeepDto = mapToDtoEst_Cost_Capex_Deep(estimatedCostCapexDeep);
+        return estimatedCostCapexDeepDto;
+    }
+    public GelDataWellDto gelDataFindById(Long id) {
+        GelDataWell gelDataWell = gelDataWellRepo.findById(id).get();
+        GelDataWellDto gelDataWellDto = mapToDtoGel_Data_Well(gelDataWell);
+        return gelDataWellDto;
+    }
+    public EstimatedCostOpexHpDto opexHpDataFindById(Long id) {
+        EstimatedCostOpexHP estimatedCostOpexHP = estimatedCostOpexHPRepo.findById(id).get();
+        EstimatedCostOpexHpDto estimatedCostOpexHpDto = mapToDtoEst_Cost_Opex_HP(estimatedCostOpexHP);
+        return estimatedCostOpexHpDto;
+    }
     public List<ProDataBaseModelDto> getTheDataList() {
         List<ProDataBaseModel> all = proDataBaseRepository.findAll();
         return all.stream().map(this::mapToDtoProData).collect(Collectors.toList());
@@ -106,8 +131,6 @@ public class DbUpdateService {
         List<EstimatedCostCapexDeep> all = estimatedCostCapexDeepRepo.findAll();
         return all.stream().map(this::mapToDtoEst_Cost_Capex_Deep).collect(Collectors.toList());
     }
-
-
 
     public List<EstimatedCostCapexHPDto> getTheDataListEst_Cost_Capex_HP() {
         List<EstimatedCostCapexHP> all = estimatedCostCapexHPRepo.findAll();
@@ -123,10 +146,14 @@ public class DbUpdateService {
     }
 
 
+
+
+
     public List<EstimatedCostOpexHpDto> getTheDataListEst_Cost_Opex_HP() {
         List<EstimatedCostOpexHP> all = estimatedCostOpexHPRepo.findAll();
         return all.stream().map(this::mapToDtoEst_Cost_Opex_HP).collect(Collectors.toList());
     }
+
 
 
     public List<GelDataWellDto> getTheDataListGelDataWell() {
@@ -137,20 +164,28 @@ public class DbUpdateService {
 
 
 
-
     public List<HeatLoadFuelsDto> getTheHeatLoadFuelList() {
         List<HeatLoadFuels> all = heatLoadFuelsRepo.findAll();
         return all.stream().map(this::mapToDtoHeatLoadFuel).collect(Collectors.toList());
     }
 
+    public HeatLoadFuelsDto heatLoadDataFindById(Long id) {
+        HeatLoadFuels heatLoadFuels = heatLoadFuelsRepo.findById(id).get();
+        HeatLoadFuelsDto heatLoadFuelsDto = mapToDtoHeatLoadFuel(heatLoadFuels);
+        return heatLoadFuelsDto;
+    }
+
+
+
     //updates methods start ============================================================
 
     //proDatabase update start
 @Transactional
-public void updateRecords(List<ProDataBaseModelDto> updatedModels) {
+public void updateRecords(List<ProDataBaseModelDto> updatedModels,String comment) {
     // Create a new change set
     ChangeSet changeSet = new ChangeSet();
     changeSet.setTimestamp(LocalDateTime.now());
+    changeSet.setComment(comment);
     changeSetRepository.save(changeSet);
 
     // Update each record and save the corresponding audit logs
@@ -237,9 +272,10 @@ public void updateRecords(List<ProDataBaseModelDto> updatedModels) {
 
 // CAPEX DEEP start update
 @Transactional
-public void estimated_cost_Capex_Deep(List<EstimatedCostCapexDeepDto> estimatedCostCapexDeepDto) {
+public void estimated_cost_Capex_Deep(List<EstimatedCostCapexDeepDto> estimatedCostCapexDeepDto,String comment) {
     ChangesSetCapexDeep changeSet = new ChangesSetCapexDeep();
     changeSet.setTimestamp(LocalDateTime.now());
+    changeSet.setComment(comment);
     changesSetCapexDeepRepo.save(changeSet);
 
     // Update each record and save the corresponding audit logs
@@ -314,10 +350,11 @@ public void estimated_cost_Capex_Deep(List<EstimatedCostCapexDeepDto> estimatedC
 // CAPEX DEEP end update ================================================
 //CAPEX HP start update
 @Transactional
-public void estimated_cost_Capex_HP(List<EstimatedCostCapexHPDto> updatedModels) {
+public void estimated_cost_Capex_HP(List<EstimatedCostCapexHPDto> updatedModels,String comment) {
     // Create a new change set
     ChangesSetCapexHp changeSet = new ChangesSetCapexHp();
     changeSet.setTimestamp(LocalDateTime.now());
+    changeSet.setComment(comment);
     changesSetCapexHpRepo.save(changeSet);
 
     // Update each record and save the corresponding audit logs
@@ -395,10 +432,11 @@ public void estimated_cost_Capex_HP(List<EstimatedCostCapexHPDto> updatedModels)
 //    estimatedCostOpexDeepRepo
 //    opexDeepAuditLogsRepo
 //    opexDeepChangesSetRepo
-    public void estimated_cost_Opex_Deep(List<EstimatedCostOpexDeepDto> updatedModels) {
+    public void estimated_cost_Opex_Deep(List<EstimatedCostOpexDeepDto> updatedModels,String comment) {
         // Create a new change set
         OpexDeepChangesSet changeSet = new OpexDeepChangesSet();
         changeSet.setTimestamp(LocalDateTime.now());
+        changeSet.setComment(comment);
         opexDeepChangesSetRepo.save(changeSet);
 
         // Update each record and save the corresponding audit logs
@@ -482,10 +520,11 @@ public void estimated_cost_Capex_HP(List<EstimatedCostCapexHPDto> updatedModels)
 //    estimatedCostOpexHPRepo
 //    opexHpAuditLogsRepo
 //    opexHpChangesSetRepo
-    public void estimated_cost_Opex_HP(List<EstimatedCostOpexHpDto> updatedModels) {
+    public void estimated_cost_Opex_HP(List<EstimatedCostOpexHpDto> updatedModels,String comment) {
         // Create a new change set
         OpexHpChangesSet changeSet = new OpexHpChangesSet();
         changeSet.setTimestamp(LocalDateTime.now());
+        changeSet.setComment(comment);
         opexHpChangesSetRepo.save(changeSet);
 
         // Update each record and save the corresponding audit logs
@@ -566,10 +605,11 @@ public void estimated_cost_Capex_HP(List<EstimatedCostCapexHPDto> updatedModels)
 //    gelDataWellChangesSetRepo
 //    gelDataWellAuditLogsRepo
     @Transactional
-    public void gelDataWell(List<GelDataWellDto> updatedModels) {
+    public void gelDataWell(List<GelDataWellDto> updatedModels,String comment) {
         // Create a new change set
         GelDataWellChangesSet changeSet = new GelDataWellChangesSet();
         changeSet.setTimestamp(LocalDateTime.now());
+        changeSet.setComment(comment);
         gelDataWellChangesSetRepo.save(changeSet);
 
         // Update each record and save the corresponding audit logs
@@ -654,10 +694,11 @@ public void estimated_cost_Capex_HP(List<EstimatedCostCapexHPDto> updatedModels)
 //    heatLoadAuditLogsRepo
 //    heatLoadChangesSetRepo
 //    heatLoadFuelsRepo
-public void heatLoadFuelsData(List<HeatLoadFuelsDto> updatedModels) {
+public void heatLoadFuelsData(List<HeatLoadFuelsDto> updatedModels,String comment) {
     // Create a new change set
     HeatLoadChangesSet changeSet = new HeatLoadChangesSet();
     changeSet.setTimestamp(LocalDateTime.now());
+    changeSet.setComment(comment);
     heatLoadChangesSetRepo.save(changeSet);
 
     // Update each record and save the corresponding audit logs
@@ -865,8 +906,56 @@ public void revertChangeSet(Long changeSetId) {
     }
 
     // CapexDeep end Restore =========================================
+   //CapexHp start Restore =========================================
+
+    @Transactional
+    public void revertCapexHpChangeSet(Long changeSetId) {
+        // Fetch all logs for the change set
+        List<CapexHpAuditLogs> auditLogs = capexHpAuditLogsRepo.findByChangeSetId(changeSetId);
+
+        // Revert each change in the change set
+        for (CapexHpAuditLogs auditLog : auditLogs) {
+            EstimatedCostCapexHP currentModel = estimatedCostCapexHPRepo.findById(auditLog.getCostCapexHp().getId()).orElse(null);
+
+            if (currentModel != null) {
+                if (auditLog.getOperationType() == OperationType.ADD) {
+                    // If it's an ADD operation, delete the added record
+                    estimatedCostCapexHPRepo.deleteById(currentModel.getId());
+                } else {
+                    // If it's an EDIT operation, restore the historical version
+                    restoreHistoricalVersion(currentModel, auditLog);
+                }
+            }
+        }
+        changesSetCapexHpRepo.deleteById(changeSetId);
+    }
+    private void restoreHistoricalVersion(EstimatedCostCapexHP currentModel, CapexHpAuditLogs auditLog) {
+        if (auditLog.getOperationType() == OperationType.EDIT) {
+            // Restore each field to its historical value for EDIT operation
+            switch (auditLog.getFieldName()) {
+                case "operation":
+                    currentModel.setOperation(auditLog.getOldValue());
+                    break;
+                case "cost":
+                    currentModel.setCost(Double.parseDouble(auditLog.getOldValue()));
+                    break;
+                case "perWell":
+                    currentModel.setPerWell(auditLog.getOldValue());
+                    break;
+//            // Add cases for other fields as needed
+            }
+        } else if (auditLog.getOperationType() == OperationType.ADD) {
+            // Handle ADD operation (removing newly added row)
+            // This could involve deleting the row or resetting the fields to default values
+            estimatedCostCapexHPRepo.delete(currentModel);
+        }
+
+        // Save the restored entity
+        estimatedCostCapexHPRepo.save(currentModel);
+    }
 
 
+//CapexHp end Restore =========================================
     //===================================Model Mappers================================
 
     public ProDataBaseModel mapToEntityProData(ProDataBaseModelDto proDataBaseModelDto) {

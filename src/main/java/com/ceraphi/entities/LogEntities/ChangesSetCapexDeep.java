@@ -19,6 +19,8 @@ public class ChangesSetCapexDeep {
     private Long id;
 
     private LocalDateTime timestamp;
+    @Lob
+    private String comment;
 
     @OneToMany(mappedBy = "changeSet", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CapexDeepAuditLogs> capexDeepAuditLogs = new ArrayList<>();
