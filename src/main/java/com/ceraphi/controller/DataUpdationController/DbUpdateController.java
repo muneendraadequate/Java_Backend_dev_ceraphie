@@ -1,7 +1,5 @@
 package com.ceraphi.controller.DataUpdationController;
-import com.ceraphi.entities.LogEntities.ChangeSet;
-import com.ceraphi.entities.LogEntities.ChangesSetCapexDeep;
-import com.ceraphi.entities.LogEntities.ChangesSetCapexHp;
+import com.ceraphi.entities.LogEntities.*;
 import com.ceraphi.entities.MasterDataTables.*;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
@@ -51,7 +49,7 @@ public class DbUpdateController {
       ApiResponseData<?> response = ApiResponseData.builder().message("update successfully").status(HttpStatus.OK.value()).build();
         return ResponseEntity.ok(response);
     }
-    @GetMapping("/revert/{changeSetId}")
+    @GetMapping("/restore/{changeSetId}")
     public ResponseEntity<?> revertChangeSet(@PathVariable Long changeSetId) {
         dbUpdateService.revertChangeSet(changeSetId);
         ApiResponseData<?> response = ApiResponseData.builder().message("restored successfully").status(HttpStatus.OK.value()).build();
@@ -129,7 +127,7 @@ public class DbUpdateController {
     }
 @GetMapping("/getChangesSetList")
 public ResponseEntity<?> getTheChangesSetList() {
-    List<ChangeSet> theChangesSetList = dbUpdateService.getTheChangesSetList();
+    List<ChangeSetDto> theChangesSetList = dbUpdateService.getTheChangesSetList();
    ApiResponseData<?> response = ApiResponseData.builder().data(theChangesSetList).message("successfully get the list ").status(HttpStatus.OK.value()).build();
     return ResponseEntity.ok(response);
 }
@@ -142,7 +140,7 @@ public ResponseEntity<?> getTheChangesSetList() {
         ApiResponseData<?> response = ApiResponseData.builder().message("update successfully").status(HttpStatus.OK.value()).build();
         return ResponseEntity.ok(response);
     }
-    @GetMapping("/restore/capexDeep/{changeSetId}")
+    @GetMapping("/restoreCapexDeep/{changeSetId}")
     public ResponseEntity<?> restoreDeepCapexChangeSet(@PathVariable Long changeSetId) {
         dbUpdateService.restoreDeepCapexChangeSet(changeSetId);
         ApiResponseData<?> response = ApiResponseData.builder().message("restored successfully").status(HttpStatus.OK.value()).build();
@@ -224,7 +222,7 @@ public ResponseEntity<?> getTheChangesSetList() {
         ApiResponseData<?> response = ApiResponseData.builder().message("update successfully").status(HttpStatus.OK.value()).build();
         return ResponseEntity.ok(response);
     }
-    @GetMapping("/revertCapexHp/{changeSetId}")
+    @GetMapping("/restoreCapexHp/{changeSetId}")
     public ResponseEntity<?> restoreCapexHpChangeSet(@PathVariable Long changeSetId) {
         dbUpdateService.revertCapexHpChangeSet(changeSetId);
         ApiResponseData<?> response = ApiResponseData.builder().message("restored successfully").status(HttpStatus.OK.value()).build();
@@ -319,6 +317,13 @@ public ResponseEntity<?> getTheChangesSetList() {
         ApiResponseData<?> response = ApiResponseData.builder().data(theData).message("successfully get the Data").status(HttpStatus.OK.value()).build();
         return ResponseEntity.ok(response);
     }
+    @GetMapping("/restoreOpexDeep/{changeSetId}")
+    public ResponseEntity<?> restoreOpexDeepChangeSet(@PathVariable Long changeSetId) {
+        dbUpdateService.revertOpexDeepChangeSet(changeSetId);
+        ApiResponseData<?> response = ApiResponseData.builder().message("restored successfully").status(HttpStatus.OK.value()).build();
+        return ResponseEntity.ok(response);
+
+    }
     @GetMapping("opexDeep/download")
     public ResponseEntity<byte[]> downloadOpexDeep() {
         List<EstimatedCostOpexDeep> list = dbUpdateService.getAllOpexDeep(); // Replace with your service method to get all records
@@ -368,6 +373,12 @@ public ResponseEntity<?> getTheChangesSetList() {
             return ""; // Return empty string in case of an error
         }
     }
+    @GetMapping("/getOpexDeepChangesList")
+    public ResponseEntity<?> getOpexDeepTheCapChangesList() {
+        List<OpexDeepChangesSet> theChangesSetList = dbUpdateService.getTheOpexDeepChangesList();
+        ApiResponseData<?> response = ApiResponseData.builder().data(theChangesSetList).message("successfully get the list ").status(HttpStatus.OK.value()).build();
+        return ResponseEntity.ok(response);
+    }
 
 //estimated cost opex deep end //////////////////////////////`
 
@@ -392,6 +403,13 @@ public ResponseEntity<?> getTheChangesSetList() {
         EstimatedCostOpexHpDto theData = dbUpdateService.opexHpDataFindById(id);
         ApiResponseData<?> response = ApiResponseData.builder().data(theData).message("successfully get the Data").status(HttpStatus.OK.value()).build();
         return ResponseEntity.ok(response);
+    }
+    @GetMapping("/restoreOpexHp/{changeSetId}")
+    public ResponseEntity<?> restoreOpexHpChangeSet(@PathVariable Long changeSetId) {
+        dbUpdateService.revertOpexHpChangeSet(changeSetId);
+        ApiResponseData<?> response = ApiResponseData.builder().message("restored successfully").status(HttpStatus.OK.value()).build();
+        return ResponseEntity.ok(response);
+
     }
     @GetMapping("opexHp/download")
     public ResponseEntity<byte[]> downloadOpexHp() {
@@ -442,7 +460,12 @@ public ResponseEntity<?> getTheChangesSetList() {
             return ""; // Return empty string in case of an error
         }
     }
-
+    @GetMapping("/getOpexHpChangesList")
+    public ResponseEntity<?> getOpexHpTheCapChangesList() {
+        List<OpexHpChangesSet> theChangesSetList = dbUpdateService.getTheOpexHpChangesList();
+        ApiResponseData<?> response = ApiResponseData.builder().data(theChangesSetList).message("successfully get the list ").status(HttpStatus.OK.value()).build();
+        return ResponseEntity.ok(response);
+    }
     //estimated cost opex hp end //////////////////////////////
     //gel data well start //////////////////////////////
     @PutMapping("/gelDataWell")
@@ -463,6 +486,13 @@ public ResponseEntity<?> getTheChangesSetList() {
         GelDataWellDto theData = dbUpdateService.gelDataFindById(id);
         ApiResponseData<?> response = ApiResponseData.builder().data(theData).message("successfully get the Data").status(HttpStatus.OK.value()).build();
         return ResponseEntity.ok(response);
+    }
+    @GetMapping("/restoreGelData/{changeSetId}")
+    public ResponseEntity<?> restoreGelDataChangeSet(@PathVariable Long changeSetId) {
+        dbUpdateService.revertGelDataChangeSet(changeSetId);
+        ApiResponseData<?> response = ApiResponseData.builder().message("restored successfully").status(HttpStatus.OK.value()).build();
+        return ResponseEntity.ok(response);
+
     }
     @GetMapping("gelData/download")
     public ResponseEntity<byte[]> downloadGelData() {
@@ -515,6 +545,12 @@ public ResponseEntity<?> getTheChangesSetList() {
             return ""; // Return empty string in case of an error
         }
     }
+    @GetMapping("/getGelDataChangesList")
+    public ResponseEntity<?> getGelDataTheCapChangesList() {
+        List<GelDataWellChangesSet> theChangesSetList = dbUpdateService.getTheGellDataChangesList();
+        ApiResponseData<?> response = ApiResponseData.builder().data(theChangesSetList).message("successfully get the list ").status(HttpStatus.OK.value()).build();
+        return ResponseEntity.ok(response);
+    }
 //gel data well end //////////////////////////////
 
 //heat load fuel start //////////////////////////////
@@ -536,6 +572,13 @@ public ResponseEntity<?> getTheChangesSetList() {
         HeatLoadFuelsDto theData = dbUpdateService.heatLoadDataFindById(id);
         ApiResponseData<?> response = ApiResponseData.builder().data(theData).message("successfully get the Data").status(HttpStatus.OK.value()).build();
         return ResponseEntity.ok(response);
+    }
+    @GetMapping("/restoreHeatLoadData/{changeSetId}")
+    public ResponseEntity<?> restoreHeatLoadDataChangeSet(@PathVariable Long changeSetId) {
+        dbUpdateService.revertHeatLoadDataChangeSet(changeSetId);
+        ApiResponseData<?> response = ApiResponseData.builder().message("restored successfully").status(HttpStatus.OK.value()).build();
+        return ResponseEntity.ok(response);
+
     }
     @GetMapping("HeatLoadFuel/download")
     public ResponseEntity<byte[]> downloadHeatLoadFuel() {
@@ -588,6 +631,12 @@ public ResponseEntity<?> getTheChangesSetList() {
             e.printStackTrace();
             return ""; // Return empty string in case of an error
         }
+    }
+    @GetMapping("/getHeatLoadChangesList")
+    public ResponseEntity<?> getHeatLoadTheCapChangesList() {
+        List<HeatLoadChangesSet> theChangesSetList = dbUpdateService.getTheHeatLoadChangesList();
+        ApiResponseData<?> response = ApiResponseData.builder().data(theChangesSetList).message("successfully get the list ").status(HttpStatus.OK.value()).build();
+        return ResponseEntity.ok(response);
     }
 //heat load fuel end //////////////////////////////
 //testing download feature

@@ -78,9 +78,18 @@ public class DbUpdateService {
     @Autowired
     private ChangeLogRepo changeLogRepository;
 
-    public List<ChangeSet>getTheChangesSetList(){return changeSetRepository.findAll();}
+    public List<ChangeSetDto> getTheChangesSetList() {
+        List<ChangeSet> changeSets = changeSetRepository.findAll();
+        return changeSets.stream()
+                .map(changeSet -> new ChangeSetDto(changeSet.getId(), changeSet.getTimestamp(), changeSet.getComment()))
+                .collect(Collectors.toList());
+    }
     public List<ChangesSetCapexDeep>getTheCapexDeepChangesList(){return changesSetCapexDeepRepo.findAll();}
     public List<ChangesSetCapexHp>getTheCapexHpChangesList(){return changesSetCapexHpRepo.findAll();}
+    public List<OpexDeepChangesSet>getTheOpexDeepChangesList(){return opexDeepChangesSetRepo.findAll();}
+    public List<OpexHpChangesSet>getTheOpexHpChangesList(){return opexHpChangesSetRepo.findAll();}
+    public List<GelDataWellChangesSet>getTheGellDataChangesList(){return gelDataWellChangesSetRepo.findAll();}
+    public List<HeatLoadChangesSet>getTheHeatLoadChangesList(){return heatLoadChangesSetRepo.findAll();}
 
     public List<ProDataBaseModel> getAllProData() {
         return proDataBaseRepository.findAll();
@@ -975,9 +984,212 @@ public void revertChangeSet(Long changeSetId) {
         // Save the restored entity
         estimatedCostCapexHPRepo.save(currentModel);
     }
-
-
 //CapexHp end Restore =========================================
+
+    //Opex Deep restore start=============================================
+    @Transactional
+    public void revertOpexDeepChangeSet(Long changeSetId) {
+        // Fetch all logs for the change set
+        List<OpexDeepAuditLogs> auditLogs = opexDeepAuditLogsRepo.findByChangeSetId(changeSetId);
+
+        // Revert each change in the change set
+        for (OpexDeepAuditLogs auditLog : auditLogs) {
+            EstimatedCostOpexDeep currentModel = estimatedCostOpexDeepRepo.findById(auditLog.getCostCapexHp().getId()).orElse(null);
+
+            if (currentModel != null) {
+                if (auditLog.getOperationType() == OperationType.ADD) {
+                    // If it's an ADD operation, delete the added record
+                    estimatedCostOpexDeepRepo.deleteById(currentModel.getId());
+                } else {
+                    // If it's an EDIT operation, restore the historical version
+                    restoreHistoricalVersion(currentModel, auditLog);
+                }
+            }
+        }
+       opexDeepChangesSetRepo.deleteById(changeSetId);
+    }
+    private void restoreHistoricalVersion(EstimatedCostOpexDeep currentModel, OpexDeepAuditLogs auditLog) {
+        if (auditLog.getOperationType() == OperationType.EDIT) {
+            // Restore each field to its historical value for EDIT operation
+            switch (auditLog.getFieldName()) {
+                case "operation":
+                    currentModel.setOperation(auditLog.getOldValue());
+                    break;
+                case "cost":
+                    currentModel.setCost(Double.parseDouble(auditLog.getOldValue()));
+                    break;
+                case "perWell":
+                    currentModel.setPerWell(auditLog.getOldValue());
+                    break;
+//            // Add cases for other fields as needed
+            }
+        } else if (auditLog.getOperationType() == OperationType.ADD) {
+            // Handle ADD operation (removing newly added row)
+            // This could involve deleting the row or resetting the fields to default values
+            estimatedCostOpexDeepRepo.delete(currentModel);
+        }
+
+        // Save the restored entity
+        estimatedCostOpexDeepRepo.save(currentModel);
+    }
+//Opex Deep restore end===============================================
+//Opex Hp restore start===============================================
+    @Transactional
+    public void revertOpexHpChangeSet(Long changeSetId) {
+        // Fetch all logs for the change set
+        List<OpexHpAuditLogs> auditLogs = opexHpAuditLogsRepo.findByChangeSetId(changeSetId);
+
+        // Revert each change in the change set
+        for (OpexHpAuditLogs auditLog : auditLogs) {
+            EstimatedCostOpexHP currentModel = estimatedCostOpexHPRepo.findById(auditLog.getCostCapexHp().getId()).orElse(null);
+
+            if (currentModel != null) {
+                if (auditLog.getOperationType() == OperationType.ADD) {
+                    // If it's an ADD operation, delete the added record
+                    estimatedCostOpexHPRepo.deleteById(currentModel.getId());
+                } else {
+                    // If it's an EDIT operation, restore the historical version
+                    restoreHistoricalVersion(currentModel, auditLog);
+                }
+            }
+        }
+        opexHpChangesSetRepo.deleteById(changeSetId);
+    }
+    private void restoreHistoricalVersion(EstimatedCostOpexHP currentModel, OpexHpAuditLogs auditLog) {
+        if (auditLog.getOperationType() == OperationType.EDIT) {
+            // Restore each field to its historical value for EDIT operation
+            switch (auditLog.getFieldName()) {
+                case "operation":
+                    currentModel.setOperation(auditLog.getOldValue());
+                    break;
+                case "cost":
+                    currentModel.setCost(Double.parseDouble(auditLog.getOldValue()));
+                    break;
+                case "perWell":
+                    currentModel.setPerWell(auditLog.getOldValue());
+                    break;
+//            // Add cases for other fields as needed
+            }
+        } else if (auditLog.getOperationType() == OperationType.ADD) {
+            // Handle ADD operation (removing newly added row)
+            // This could involve deleting the row or resetting the fields to default values
+            estimatedCostOpexHPRepo.delete(currentModel);
+        }
+
+        // Save the restored entity
+        estimatedCostOpexHPRepo.save(currentModel);
+    }
+    //Opex Hp restore end===============================================
+
+    //Gel Data restore start======================================================
+    @Transactional
+    public void revertGelDataChangeSet(Long changeSetId) {
+        // Fetch all logs for the change set
+        List<GelDataWellAuditLogs> auditLogs = gelDataWellAuditLogsRepo.findByChangeSetId(changeSetId);
+
+        // Revert each change in the change set
+        for (GelDataWellAuditLogs auditLog : auditLogs) {
+            GelDataWell currentModel = gelDataWellRepo.findById(auditLog.getGelDataWell().getId()).orElse(null);
+
+            if (currentModel != null) {
+                if (auditLog.getOperationType() == OperationType.ADD) {
+                    // If it's an ADD operation, delete the added record
+                    gelDataWellRepo.deleteById(currentModel.getId());
+                } else {
+                    // If it's an EDIT operation, restore the historical version
+                    restoreHistoricalVersion(currentModel, auditLog);
+                }
+            }
+        }
+        gelDataWellChangesSetRepo.deleteById(changeSetId);
+    }
+    private void restoreHistoricalVersion(GelDataWell currentModel, GelDataWellAuditLogs auditLog) {
+        if (auditLog.getOperationType() == OperationType.EDIT) {
+            // Restore each field to its historical value for EDIT operation
+            switch (auditLog.getFieldName()) {
+                case "cop":
+                    currentModel.setCOP(auditLog.getOldValue());
+                    break;
+                case "capacity":
+                    currentModel.setCapacity(auditLog.getOldValue());
+                    break;
+                case "flow_rate":
+                    currentModel.setFlowRate(auditLog.getOldValue());
+                    break;
+                    case "temp_required":
+                    currentModel.setTempRequired(auditLog.getOldValue());
+                    break;
+                    case "well_outlet_temp":
+                    currentModel.setWellOutletTemp(auditLog.getOldValue());
+                    break;
+//            // Add cases for other fields as needed
+            }
+        } else if (auditLog.getOperationType() == OperationType.ADD) {
+            // Handle ADD operation (removing newly added row)
+            // This could involve deleting the row or resetting the fields to default values
+            gelDataWellRepo.delete(currentModel);
+        }
+
+        // Save the restored entity
+        gelDataWellRepo.save(currentModel);
+    }
+    //gel data restore end======================================================
+    //HeatLoad Data restore start======================================================
+    @Transactional
+    public void revertHeatLoadDataChangeSet(Long changeSetId) {
+        // Fetch all logs for the change set
+        List<HeatLoadAuditLogs> auditLogs = heatLoadAuditLogsRepo.findByChangeSetId(changeSetId);
+
+        // Revert each change in the change set
+        for (HeatLoadAuditLogs auditLog : auditLogs) {
+            HeatLoadFuels currentModel = heatLoadFuelsRepo.findById(auditLog.getHeatLoadFuels().getId()).orElse(null);
+
+            if (currentModel != null) {
+                if (auditLog.getOperationType() == OperationType.ADD) {
+                    // If it's an ADD operation, delete the added record
+                    heatLoadFuelsRepo.deleteById(currentModel.getId());
+                } else {
+                    // If it's an EDIT operation, restore the historical version
+                    restoreHistoricalVersion(currentModel, auditLog);
+                }
+            }
+        }
+        heatLoadChangesSetRepo.deleteById(changeSetId);
+    }
+    private void restoreHistoricalVersion(HeatLoadFuels currentModel, HeatLoadAuditLogs auditLog) {
+        if (auditLog.getOperationType() == OperationType.EDIT) {
+            // Restore each field to its historical value for EDIT operation
+            switch (auditLog.getFieldName()) {
+                case "carbon":
+                    currentModel.setCarbon(auditLog.getOldValue());
+                    break;
+                case "efficiency":
+                    currentModel.setEfficiency(auditLog.getOldValue());
+                    break;
+                case "fuel_type":
+                    currentModel.setFuelType(auditLog.getOldValue());
+                    break;
+                case "ghg":
+                    currentModel.setGhg(auditLog.getOldValue());
+                    break;
+                case "nox":
+                    currentModel.setNox(auditLog.getOldValue());
+                    break;
+                case "noxn":
+                    currentModel.setNoxN(auditLog.getOldValue());
+                    break;
+//            // Add cases for other fields as needed
+            }
+        } else if (auditLog.getOperationType() == OperationType.ADD) {
+            // Handle ADD operation (removing newly added row)
+            // This could involve deleting the row or resetting the fields to default values
+            heatLoadFuelsRepo.delete(currentModel);
+        }
+
+        // Save the restored entity
+        heatLoadFuelsRepo.save(currentModel);
+    }
+    //HeatLoad Data restore end======================================================
     //===================================Model Mappers================================
 
     public ProDataBaseModel mapToEntityProData(ProDataBaseModelDto proDataBaseModelDto) {
