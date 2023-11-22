@@ -11,6 +11,6 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class ChangeSetDto {
     private Long id;
-    private LocalDateTime timestamp;
+    private String timestamp;
     private String comment;
 }

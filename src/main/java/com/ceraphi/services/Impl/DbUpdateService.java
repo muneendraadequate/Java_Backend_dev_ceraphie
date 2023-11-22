@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import javax.transaction.Transactional;
 import java.lang.reflect.Field;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -80,44 +81,51 @@ public class DbUpdateService {
 
     public List<ChangeSetDto> getTheChangesSetList() {
         List<ChangeSet> changeSets = changeSetRepository.findAll();
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         return changeSets.stream()
-                .map(changeSet -> new ChangeSetDto(changeSet.getId(), changeSet.getTimestamp(), changeSet.getComment()))
+                .map(changeSet -> new ChangeSetDto(changeSet.getId(), changeSet.getTimestamp().format(dateFormatter), changeSet.getComment()))
                 .collect(Collectors.toList());
     }
     public List<ChangeSetDto>getTheCapexDeepChangesList(){
         List<ChangesSetCapexDeep> changeSets =changesSetCapexDeepRepo.findAll();
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         return changeSets.stream()
-                .map(changeSet -> new ChangeSetDto(changeSet.getId(), changeSet.getTimestamp(), changeSet.getComment()))
+                .map(changeSet -> new ChangeSetDto(changeSet.getId(), changeSet.getTimestamp().format(dateFormatter), changeSet.getComment()))
                 .collect(Collectors.toList());
     }
     public List<ChangeSetDto>getTheCapexHpChangesList(){
         List<ChangesSetCapexHp> changeSets = changesSetCapexHpRepo.findAll();
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         return changeSets.stream()
-                .map(changeSet -> new ChangeSetDto(changeSet.getId(), changeSet.getTimestamp(), changeSet.getComment()))
+                .map(changeSet -> new ChangeSetDto(changeSet.getId(), changeSet.getTimestamp().format(dateFormatter), changeSet.getComment()))
                 .collect(Collectors.toList());
     }
     public List<ChangeSetDto>getTheOpexDeepChangesList(){
         List<OpexDeepChangesSet> changeSets = opexDeepChangesSetRepo.findAll();
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         return changeSets.stream()
-                .map(changeSet -> new ChangeSetDto(changeSet.getId(), changeSet.getTimestamp(), changeSet.getComment()))
+                .map(changeSet -> new ChangeSetDto(changeSet.getId(), changeSet.getTimestamp().format(dateFormatter), changeSet.getComment()))
                 .collect(Collectors.toList());
     }
     public List<ChangeSetDto>getTheOpexHpChangesList(){
         List<OpexHpChangesSet> changeSets = opexHpChangesSetRepo.findAll();
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         return changeSets.stream()
-                .map(changeSet -> new ChangeSetDto(changeSet.getId(), changeSet.getTimestamp(), changeSet.getComment()))
+                .map(changeSet -> new ChangeSetDto(changeSet.getId(), changeSet.getTimestamp().format(dateFormatter), changeSet.getComment()))
                 .collect(Collectors.toList());
     }
     public List<ChangeSetDto>getTheGellDataChangesList(){
         List<GelDataWellChangesSet> changeSets = gelDataWellChangesSetRepo.findAll();
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         return changeSets.stream()
-                .map(changeSet -> new ChangeSetDto(changeSet.getId(), changeSet.getTimestamp(), changeSet.getComment()))
+                .map(changeSet -> new ChangeSetDto(changeSet.getId(), changeSet.getTimestamp().format(dateFormatter), changeSet.getComment()))
                 .collect(Collectors.toList());
     }
     public List<ChangeSetDto>getTheHeatLoadChangesList(){
         List<HeatLoadChangesSet> changeSets = heatLoadChangesSetRepo.findAll();
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         return changeSets.stream()
-                .map(changeSet -> new ChangeSetDto(changeSet.getId(), changeSet.getTimestamp(), changeSet.getComment()))
+                .map(changeSet -> new ChangeSetDto(changeSet.getId(), changeSet.getTimestamp().format(dateFormatter), changeSet.getComment()))
                 .collect(Collectors.toList());
 
     }
