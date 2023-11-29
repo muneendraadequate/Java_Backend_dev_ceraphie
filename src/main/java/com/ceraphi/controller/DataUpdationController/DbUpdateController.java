@@ -1,48 +1,26 @@
 package com.ceraphi.controller.DataUpdationController;
-import com.ceraphi.entities.LogEntities.*;
 import com.ceraphi.entities.MasterDataTables.*;
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.pdmodel.PDPage;
-import org.apache.pdfbox.pdmodel.PDPageContentStream;
-import org.apache.pdfbox.pdmodel.common.PDRectangle;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import com.ceraphi.dto.MasterDataTablesDto.*;
 import com.ceraphi.dto.ProDataBaseModelDto;
-import com.ceraphi.dto.WellInfoDto;
 import com.ceraphi.services.Impl.DbUpdateService;
 import com.ceraphi.utils.ApiResponseData;
-import com.itextpdf.text.pdf.PdfWriter;
 import com.opencsv.CSVWriter;
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
-import com.itextpdf.text.Document;
-import com.itextpdf.text.DocumentException;
-import com.itextpdf.text.Paragraph;
-import com.itextpdf.text.pdf.PdfWriter;
-
-import java.io.ByteArrayOutputStream;
-import java.util.List;
-import java.io.IOException;
-
-import static com.ceraphi.utils.PdfTableGenerator.drawTableHeader;
-import static com.ceraphi.utils.PdfTableGenerator.drawTableRows;
 
 @RestController
 @RequestMapping("/api")
+@CrossOrigin("*")
 public class DbUpdateController {
     @Autowired
     private DbUpdateService dbUpdateService;
 
-//pro data table start //////////////////////////////
+// PRO DATA TABLE START------------------------------------------------------------------------------------------------------------------------
     @PutMapping("/proDataUpdate")
     public ResponseEntity<?> updateRecords(@RequestBody List<ProDataBaseModelDto> updatedModels) {
         dbUpdateService.updateRecords(updatedModels);
@@ -77,62 +55,98 @@ public class DbUpdateController {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
         headers.setContentDispositionFormData("attachment", "prodata.csv");
-
-        return new ResponseEntity<>(csvData, headers, HttpStatus.OK);
+        headers.setCacheControl(CacheControl.noCache());
+        return  ResponseEntity.ok().headers(headers).body(csvData);
     }
 
-    private byte[] convertProDataToCSV(List<ProDataBaseModel> proDataList) {
-        // Implement logic to convert the list of ProDataBaseModel to CSV format
-        // You can use a library like OpenCSV or manually create the CSV string
-        // For simplicity, let's assume a method called convertToCSVString is available
-        String csvString = convertToCSVString(proDataList);
+//    private byte[] convertProDataToCSV(List<ProDataBaseModel> proDataList) {
+//        // Implement logic to convert the list of ProDataBaseModel to CSV format
+//        // You can use a library like OpenCSV or manually create the CSV string
+//        // For simplicity, let's assume a method called convertToCSVString is available
+//        String csvString = convertToCSVString(proDataList);
+//
+//        return csvString.getBytes(StandardCharsets.UTF_8);
+//    }
+//
+//    public static String convertToCSVString(List<ProDataBaseModel> proDataList) {
+//        try (StringWriter stringWriter = new StringWriter();
+//             CSVWriter csvWriter = new CSVWriter(stringWriter, CSVWriter.DEFAULT_SEPARATOR, CSVWriter.NO_QUOTE_CHARACTER,
+//                     CSVWriter.DEFAULT_ESCAPE_CHARACTER, CSVWriter.DEFAULT_LINE_END)) {
+//
+//            // Writing header
+//            String[] header = {"id", "geothermal_gradient", "steady_state_temp", "k_wt", "flow_rate",
+//                    "pumping_power", "depth", "delta", "pressure_loss", "bht", "return_value"};
+//            csvWriter.writeNext(header);
+//
+//            // Writing data
+//            for (ProDataBaseModel proData : proDataList) {
+//                String[] data = {
+//                        String.valueOf(proData.getId()),
+//                        String.valueOf(proData.getGeothermalGradient()),
+//                        String.valueOf(proData.getSteadyStateTemp()),
+//                        String.valueOf(proData.getKWt()),
+//                        String.valueOf(proData.getFlowRate()),
+//                        String.valueOf(proData.getPumpingPower()),
+//                        String.valueOf(proData.getDepth()),
+//                        String.valueOf(proData.getDelta()),
+//                        String.valueOf(proData.getPressureLoss()),
+//                        String.valueOf(proData.getBHT()),
+//                        String.valueOf(proData.getReturnValue())
+//                };
+//                csvWriter.writeNext(data);
+//            }
+//
+//            return stringWriter.toString();
+//        } catch (Exception e) {
+//            // Handle exception as needed
+//            e.printStackTrace();
+//            return ""; // Return empty string in case of an error
+//        }
+//    }
+private byte[] convertProDataToCSV(List<ProDataBaseModel> proDataList) {
+    try (StringWriter stringWriter = new StringWriter();
+         CSVWriter csvWriter = new CSVWriter(stringWriter, CSVWriter.DEFAULT_SEPARATOR, CSVWriter.NO_QUOTE_CHARACTER,
+                 CSVWriter.DEFAULT_ESCAPE_CHARACTER, CSVWriter.DEFAULT_LINE_END)) {
 
-        return csvString.getBytes(StandardCharsets.UTF_8);
-    }
+        // Writing header
+        String[] header = {"id", "geothermal_gradient", "steady_state_temp", "k_wt", "flow_rate",
+                "pumping_power", "depth", "delta", "pressure_loss", "bht", "return_value"};
+        csvWriter.writeNext(header);
 
-    public static String convertToCSVString(List<ProDataBaseModel> proDataList) {
-        try (StringWriter stringWriter = new StringWriter();
-             CSVWriter csvWriter = new CSVWriter(stringWriter, CSVWriter.DEFAULT_SEPARATOR, CSVWriter.NO_QUOTE_CHARACTER,
-                     CSVWriter.DEFAULT_ESCAPE_CHARACTER, CSVWriter.DEFAULT_LINE_END)) {
-
-            // Writing header
-            String[] header = {"id", "geothermal_gradient", "steady_state_temp", "k_wt", "flow_rate",
-                    "pumping_power", "depth", "delta", "pressure_loss", "bht", "return_value"};
-            csvWriter.writeNext(header);
-
-            // Writing data
-            for (ProDataBaseModel proData : proDataList) {
-                String[] data = {
-                        String.valueOf(proData.getId()),
-                        String.valueOf(proData.getGeothermalGradient()),
-                        String.valueOf(proData.getSteadyStateTemp()),
-                        String.valueOf(proData.getKWt()),
-                        String.valueOf(proData.getFlowRate()),
-                        String.valueOf(proData.getPumpingPower()),
-                        String.valueOf(proData.getDepth()),
-                        String.valueOf(proData.getDelta()),
-                        String.valueOf(proData.getPressureLoss()),
-                        String.valueOf(proData.getBHT()),
-                        String.valueOf(proData.getReturnValue())
-                };
-                csvWriter.writeNext(data);
-            }
-
-            return stringWriter.toString();
-        } catch (Exception e) {
-            // Handle exception as needed
-            e.printStackTrace();
-            return ""; // Return empty string in case of an error
+        // Writing data
+        for (ProDataBaseModel proData : proDataList) {
+            String[] data = {
+                    String.valueOf(proData.getId()),
+                    String.valueOf(proData.getGeothermalGradient()),
+                    String.valueOf(proData.getSteadyStateTemp()),
+                    String.valueOf(proData.getKWt()),
+                    String.valueOf(proData.getFlowRate()),
+                    String.valueOf(proData.getPumpingPower()),
+                    String.valueOf(proData.getDepth()),
+                    String.valueOf(proData.getDelta()),
+                    String.valueOf(proData.getPressureLoss()),
+                    String.valueOf(proData.getBHT()),
+                    String.valueOf(proData.getReturnValue())
+            };
+            csvWriter.writeNext(data);
         }
+
+        return stringWriter.toString().getBytes(StandardCharsets.UTF_8);
+    } catch (Exception e) {
+        e.printStackTrace();
+        return new byte[0];
     }
+}
 @GetMapping("/getChangesSetList")
 public ResponseEntity<?> getTheChangesSetList() {
     List<ChangeSetDto> theChangesSetList = dbUpdateService.getTheChangesSetList();
    ApiResponseData<?> response = ApiResponseData.builder().data(theChangesSetList).message("successfully get the list ").status(HttpStatus.OK.value()).build();
     return ResponseEntity.ok(response);
 }
-//pro database table end //////////////////////////////
-//estimated cost capex deep start //////////////////////////////
+//PRO DATA TABLE END ------------------------------------------------------------------------------------------------------------------------------------------------
+    //+
+    //+
+//ESTIMATED COST CAPEX DEEP START ------------------------------------------------------------------------------------------------------------------------------------
 
     @PutMapping("/estCostCapexDeep")
     public ResponseEntity<?> estimated_cost_Capex_Deep(@RequestBody List<EstimatedCostCapexDeepDto> estimatedCostCapexDeepDto) {
@@ -214,8 +228,10 @@ public ResponseEntity<?> getTheChangesSetList() {
         return ResponseEntity.ok(response);
     }
 
-    //estimated cost capex deep end //////////////////////////////
-    //estimated cost capex HP start //////////////////////////////
+    //ESTIMATED COAT CAPEX DEEP END ------------------------------------------------------------------------------------------------------------------------------------
+    //+
+    //+
+    //ESTIMATED COST CAPEX HP START-------------------------------------------------------------------------------------------------------------------------------------------
     @PutMapping("/estCostCapexHP")
     public ResponseEntity<?> estimated_cost_Capex_HP(@RequestBody List<EstimatedCostCapexHPDto> estimatedCostCapexHPDto) {
         dbUpdateService.estimated_cost_Capex_HP(estimatedCostCapexHPDto);
@@ -296,8 +312,10 @@ public ResponseEntity<?> getTheChangesSetList() {
         ApiResponseData<?> response = ApiResponseData.builder().data(theChangesSetList).message("successfully get the list ").status(HttpStatus.OK.value()).build();
         return ResponseEntity.ok(response);
     }
-
-    //estimated cost opex deep start //////////////////////////////
+    //ESTIMATED COST CAPEX HP END-------------------------------------------------------------------------------------------------------------------------------------------
+    //+
+    //+
+    //ESTIMATED COST OPEX DEEP START-------------------------------------------------------------------------------------------------------------------------------------------
     @PutMapping("/estCostOpexDeep")
     public ResponseEntity<?> estimated_cost_Opex_Deep(@RequestBody List<EstimatedCostOpexDeepDto> estimatedCostOpexDeepDto) {
         dbUpdateService.estimated_cost_Opex_Deep(estimatedCostOpexDeepDto);
@@ -380,10 +398,10 @@ public ResponseEntity<?> getTheChangesSetList() {
         return ResponseEntity.ok(response);
     }
 
-//estimated cost opex deep end //////////////////////////////`
-
-
-//estimated cost opex hp start //////////////////////////////
+//ESTIMATED COST OPEX DEEP END -------------------------------------------------------------------------------------------------------------------------------------------
+    //+
+    //+
+//ESTIMATED COST OPEX HP START--------------------------------------------------------------------------------------------------------------------------------------------
     @PutMapping("/estCostOpexHP")
     public ResponseEntity<?> estimated_cost_Opex_HP(@RequestBody List<EstimatedCostOpexHpDto> estimatedCostOpexHpDto) {
         dbUpdateService.estimated_cost_Opex_HP(estimatedCostOpexHpDto);
@@ -466,8 +484,10 @@ public ResponseEntity<?> getTheChangesSetList() {
         ApiResponseData<?> response = ApiResponseData.builder().data(theChangesSetList).message("successfully get the list ").status(HttpStatus.OK.value()).build();
         return ResponseEntity.ok(response);
     }
-    //estimated cost opex hp end //////////////////////////////
-    //gel data well start //////////////////////////////
+    //ESTIMATED COST OPEX HP END -------------------------------------------------------------------------------------------------------------------------------------------
+    //+
+    //+
+    //GEL DATA WELL START------------------------------------------------------------------------------------------------------------------------------------------
     @PutMapping("/gelDataWell")
     public ResponseEntity<?> gelDataWellData(@RequestBody List<GelDataWellDto> gelDataWellDto) {
         dbUpdateService.gelDataWell(gelDataWellDto);
@@ -551,9 +571,10 @@ public ResponseEntity<?> getTheChangesSetList() {
         ApiResponseData<?> response = ApiResponseData.builder().data(theChangesSetList).message("successfully get the list ").status(HttpStatus.OK.value()).build();
         return ResponseEntity.ok(response);
     }
-//gel data well end //////////////////////////////
-
-//heat load fuel start //////////////////////////////
+//GEL DATA WELL END--------------------------------------------------------------------------------------------------------------------------------------------------------
+    //+
+    //+
+//HEAT LOAD FUEL START------------------------------------------------------------------------------------------------------------------------------------------------
     @PutMapping("/heatLoadFuel")
     public ResponseEntity<?> heatLoadFuel(@RequestBody List<HeatLoadFuelsDto> heatLoadFuelsDto) {
         dbUpdateService.heatLoadFuelsData(heatLoadFuelsDto);
@@ -588,7 +609,7 @@ public ResponseEntity<?> getTheChangesSetList() {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-        headers.setContentDispositionFormData("attachment", "prodata.csv");
+        headers.setContentDispositionFormData("attachment", "Fuel DataBase.csv");
 
         return new ResponseEntity<>(csvData, headers, HttpStatus.OK);
     }
@@ -638,8 +659,8 @@ public ResponseEntity<?> getTheChangesSetList() {
         ApiResponseData<?> response = ApiResponseData.builder().data(theChangesSetList).message("successfully get the list ").status(HttpStatus.OK.value()).build();
         return ResponseEntity.ok(response);
     }
-//heat load fuel end //////////////////////////////
-//testing download feature
+//HEAT LOAD FUEL END------------------------------------------------------------------------------------------------------------------------------------------------
+// testing download feature
 
 //    @GetMapping("/download-pdf")
 //    public ResponseEntity<byte[]> downloadPdf() {

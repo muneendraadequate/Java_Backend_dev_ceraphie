@@ -12,6 +12,7 @@ import com.ceraphi.utils.authUtils.EmailService;
 import com.ceraphi.utils.authUtils.PasswordResetRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -261,12 +262,24 @@ public class AuthController {
             return ResponseEntity.ok(apiResponseData);
         }
     }
-@GetMapping("/users")
-public ResponseEntity<?> getUsers(){
-        ApiResponseData<?> apiResponseData = ApiResponseData.builder().status(HttpStatus.OK.value()).
-                data(userRepository.findAll()).build();
-    return ResponseEntity.ok(apiResponseData);
-}
+//@GetMapping("/users")
+//public ResponseEntity<?> getUsers(){
+//        ApiResponseData<?> apiResponseData = ApiResponseData.builder().status(HttpStatus.OK.value()).
+//                data(userRepository.findAll()).build();
+//    return ResponseEntity.ok(apiResponseData);
+//}
+
+    @GetMapping("/users")
+    public ResponseEntity<?> getUsers() {
+        List<User> users = userRepository.findAll(Sort.by(Sort.Order.desc("id")));
+
+        ApiResponseData<?> apiResponseData = ApiResponseData.builder()
+                .status(HttpStatus.OK.value())
+                .data(users)
+                .build();
+
+        return ResponseEntity.ok(apiResponseData);
+    }
     @PutMapping("/updateUser/{id}")
     public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody SignUpDto signUpDto) throws RoleNotFoundException {
         Optional<User> userOptional = userRepository.findById(id);

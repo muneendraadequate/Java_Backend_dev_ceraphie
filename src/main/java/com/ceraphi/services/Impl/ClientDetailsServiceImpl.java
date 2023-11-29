@@ -137,7 +137,8 @@ public class ClientDetailsServiceImpl implements ClientDetailsService {
 
     @Override
     public List<ClientDetailsDTO> getClientDetails(Long clientId) {
-        List<ClientDetails> clientDetails = clientDetailsRepository.findAllByUserId(clientId);
+//        List<ClientDetails> clientDetails = clientDetailsRepository.findAllByUserId(clientId);
+        List<ClientDetails> clientDetails = clientDetailsRepository.findAll();
 
         // Sort the list in descending order by a specific field (e.g., id)
         clientDetails.sort(Comparator.comparingLong(ClientDetails::getId).reversed());
@@ -148,6 +149,20 @@ public class ClientDetailsServiceImpl implements ClientDetailsService {
 
         return clients;
     }
+
+//    @Override
+//    public List<ClientDetailsDTO> getClientDetails() {
+//        List<ClientDetails> clientDetails = clientDetailsRepository.findAll();
+//
+//        // Sort the list in descending order by a specific field (e.g., id)
+//        clientDetails.sort(Comparator.comparingLong(ClientDetails::getId).reversed());
+//
+//        List<ClientDetailsDTO> clients = clientDetails.stream()
+//                .map(s -> mapToDto(s))
+//                .collect(Collectors.toList());
+//
+//        return clients;
+//    }
 
     @Override
     public ClientDetailsDTO getClientDetailsById(Long clientId) {
@@ -226,11 +241,29 @@ public class ClientDetailsServiceImpl implements ClientDetailsService {
 
     }
 
-    public ClientDetailsDTO mapToDto(ClientDetails clientDetails) {
-        ClientDetailsDTO clientDetailsDTO = modelMapper.map(clientDetails, ClientDetailsDTO.class);
-
-        clientDetailsDTO.setClientKey(clientDetails.getId());
-        return clientDetailsDTO;
+//    public ClientDetailsDTO mapToDto(ClientDetails clientDetails) {
+//        ClientDetailsDTO clientDetailsDTO = modelMapper.map(clientDetails, ClientDetailsDTO.class);
+//
+//        clientDetailsDTO.setClientKey(clientDetails.getId());
+//        return clientDetailsDTO;
+//    }
+    public static ClientDetailsDTO mapToDto(ClientDetails clientDetails) {
+        ClientDetailsDTO dto = new ClientDetailsDTO();
+        dto.setClientName(clientDetails.getClientName());
+        dto.setClientType(clientDetails.getClientType());
+        dto.setEmail(clientDetails.getEmail());
+        dto.setLanguage(clientDetails.getLanguage());
+        dto.setAddress(clientDetails.getAddress());
+        dto.setCity(clientDetails.getCity());
+        dto.setCountry(clientDetails.getCountry());
+        dto.setPostalCode(clientDetails.getPostalCode());
+        dto.setLocalCurrency(clientDetails.getLocalCurrency());
+        dto.setRestriction(clientDetails.isRestriction());
+        dto.setGeopoliticalData(clientDetails.getGeopoliticalData());
+        dto.setRestrictionDetails(clientDetails.getRestrictionDetails());
+        // Assuming you have a UserDto
+        dto.setClientKey(clientDetails.getId());
+        return dto;
     }
 
 }

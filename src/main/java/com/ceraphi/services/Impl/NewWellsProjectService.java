@@ -4,29 +4,21 @@ import com.ceraphi.dto.GeneralInformationDto;
 import com.ceraphi.dto.InputsDto;
 import com.ceraphi.dto.NewWellCreationDto;
 import com.ceraphi.dto.WellSummaryDto;
-import com.ceraphi.entities.ClientDetails;
-import com.ceraphi.entities.GeneralInformation;
-import com.ceraphi.entities.Inputs;
-import com.ceraphi.entities.WellSummaryData;
+import com.ceraphi.entities.*;
 import com.ceraphi.exceptions.ResourceNotFoundException;
-import com.ceraphi.repository.ClientDetailsRepository;
-import com.ceraphi.repository.GeneralInformationRepository;
-import com.ceraphi.repository.InputsRepository;
-import com.ceraphi.repository.SummaryRepository;
+import com.ceraphi.repository.*;
 import com.ceraphi.utils.ApiResponseData;
-import com.ceraphi.utils.Status;
-import io.swagger.annotations.ApiResponse;
-import org.apache.bcel.generic.NEW;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
-import java.util.Date;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class NewWellsProjectService {
+    @Autowired
+    private CountriesRepo countriesRepo;
     @Autowired
     private ClientDetailsRepository clientDetailsRepository;
     @Autowired
@@ -36,57 +28,58 @@ public class NewWellsProjectService {
     @Autowired
     private SummaryRepository summaryRepository;
 
+
     @Transactional
     public ApiResponseData saveTheNewWellProject(NewWellCreationDto newWellCreationDto) {
         InputsDto inputsDto = newWellCreationDto.getInputsDto();
         WellSummaryDto wellSummaryDto = newWellCreationDto.getWellSummaryDto();
-        GeneralInformationDto generalInformationDto = newWellCreationDto.getGeneralInformationDto();
-        GeneralInformation generalInfo = new GeneralInformation();
-        String clientId = generalInformationDto.getClientId();
+//        GeneralInformationDto generalInformationDto = newWellCreationDto.getGeneralInformationDto();
+//        GeneralInformation generalInfo = new GeneralInformation();
+//        String clientId = generalInformationDto.getClientId();
 
-        Optional<ClientDetails> byId = clientDetailsRepository.findById(Long.parseLong(clientId));
+//        Optional<ClientDetails> byId = clientDetailsRepository.findById(Long.parseLong(clientId));
+//
+//        if (byId.isPresent()) {
+//            ClientDetails clientDetails = byId.get();
+//            generalInfo.setUser(generalInformationDto.getUser());
+//            generalInfo.setClientName(clientDetails.getClientName());
+//            generalInfo.setProjectName(generalInformationDto.getProjectName());
+//            generalInfo.setPreferredUnits(generalInformationDto.getPreferredUnits());
+//            generalInfo.setProjectCurrency(generalInformationDto.getProjectCurrency());
+//            generalInfo.setClientId(String.valueOf(clientDetails.getId()));
+//            generalInfo.setGeoPoliticalData(generalInformationDto.getGeoPoliticalData());
+//            generalInfo.setRestrictionDetails(generalInformationDto.getRestrictionDetails());
+//            generalInfo.setAddress(generalInformationDto.getAddress());
+//            generalInfo.setCity(generalInformationDto.getCity());
+//            generalInfo.setCountry(generalInformationDto.getCountry());
+//            generalInfo.setPostalCode(generalInformationDto.getPostalCode());
+//            generalInfo.setIs_deleted(false);
+//            generalInfo.setProjectType(generalInformationDto.getProjectType());
+//            // Set status and save the general information as a new project
+//            generalInfo.setStatus(Status.ACTIVE);
+//            GeneralInformation generalInfo1 = generalInformationRepository.save(generalInfo);
+        Inputs inputs = mapToEntityInputs(inputsDto);
 
-        if (byId.isPresent()) {
-            ClientDetails clientDetails = byId.get();
-            generalInfo.setUser(generalInformationDto.getUser());
-            generalInfo.setClientName(clientDetails.getClientName());
-            generalInfo.setProjectName(generalInformationDto.getProjectName());
-            generalInfo.setPreferredUnits(generalInformationDto.getPreferredUnits());
-            generalInfo.setProjectCurrency(generalInformationDto.getProjectCurrency());
-            generalInfo.setClientId(String.valueOf(clientDetails.getId()));
-            generalInfo.setGeoPoliticalData(generalInformationDto.getGeoPoliticalData());
-            generalInfo.setRestrictionDetails(generalInformationDto.getRestrictionDetails());
-            generalInfo.setAddress(generalInformationDto.getAddress());
-            generalInfo.setCity(generalInformationDto.getCity());
-            generalInfo.setCountry(generalInformationDto.getCountry());
-            generalInfo.setPostalCode(generalInformationDto.getPostalCode());
-            generalInfo.setIs_deleted(false);
-            generalInfo.setProjectType(generalInformationDto.getProjectType());
-            // Set status and save the general information as a new project
-            generalInfo.setStatus(Status.ACTIVE);
-            GeneralInformation generalInfo1 = generalInformationRepository.save(generalInfo);
-            Inputs inputs = mapToEntityInputs(inputsDto);
+        GeneralInformation generalInformation = generalInformationRepository.findById(Long.valueOf(newWellCreationDto.getGeneralInformationId()))
+                .orElseThrow(() -> new ResourceNotFoundException("generalInfo", "id", Long.valueOf(newWellCreationDto.getGeneralInformationId())));
+        inputs.setGeneralInformation(generalInformation);
 
-            GeneralInformation generalInformation = generalInformationRepository.findById(generalInfo1.getId())
-                    .orElseThrow(() -> new ResourceNotFoundException("generalInfo", "id", generalInfo1.getId()));
-            inputs.setGeneralInformation(generalInformation);
+        inputs.setCreatedAt(new Date());
+        inputsRepository.save(inputs);
+        WellSummaryData wellSummaryData = mapToEntitySummary(wellSummaryDto);
+        wellSummaryData.setGeneralInformation(generalInformation);
+        summaryRepository.save(wellSummaryData);
+        return ApiResponseData.<GeneralInformationDto>builder()
+                .status(HttpStatus.OK.value())
+                .message("project saved successfully")
+                .build();
 
-            inputs.setCreatedAt(new Date());
-            inputsRepository.save(inputs);
-            WellSummaryData wellSummaryData = mapToEntitySummary(wellSummaryDto);
-            wellSummaryData.setGeneralInformation(generalInfo1);
-            summaryRepository.save(wellSummaryData);
-            return ApiResponseData.<GeneralInformationDto>builder()
-                    .status(HttpStatus.OK.value())
-                    .message("project saved successfully")
-                    .build();
-
-        } else {
-            return ApiResponseData.<GeneralInformationDto>builder()
-                    .status(HttpStatus.NOT_FOUND.value())
-                    .message("Client not found")
-                    .build();
-        }
+//        } else {
+//            return ApiResponseData.<GeneralInformationDto>builder()
+//                    .status(HttpStatus.NOT_FOUND.value())
+//                    .message("Client not found")
+//                    .build();
+//        }
     }
 
     public ApiResponseData updateTheNewWellProject(NewWellCreationDto newWellCreationDto, Long id) {
@@ -180,25 +173,58 @@ public class NewWellsProjectService {
 
     }
 
-   public ApiResponseData getProjectById(Long id){
-       Optional<GeneralInformation> byId = generalInformationRepository.findById(id);
-       GeneralInformation generalInformation = byId.get();
-       Inputs inputs = inputsRepository.findByGeneralInformationId(id);
-       WellSummaryData summaryData = summaryRepository.findByGeneralInformationId(id);
+    //   public ApiResponseData getProjectById(Long id){
+//       Optional<GeneralInformation> byId = generalInformationRepository.findById(id);
+//       GeneralInformation generalInformation = byId.get();
+//       Inputs inputs = inputsRepository.findByGeneralInformationId(id);
+//       WellSummaryData summaryData = summaryRepository.findByGeneralInformationId(id);
+//
+//       GeneralInformationDto generalInformationDto = mapToDtoGeneralInformation(generalInformation);
+//       WellSummaryDto wellSummaryDto = mapToDtoSummary(summaryData);
+//       InputsDto inputsDto = mapToDtoInputs(inputs);
+//       NewWellCreationDto NewWellCreationDto = new NewWellCreationDto();
+//       NewWellCreationDto.setWellSummaryDto(wellSummaryDto);
+//       NewWellCreationDto.setInputsDto(inputsDto);
+//       NewWellCreationDto.setGeneralInformationDto(generalInformationDto);
+//
+//       return ApiResponseData.builder().status(HttpStatus.OK.value()).data(NewWellCreationDto).build();
+//   }
+    public ApiResponseData getProjectById(Long id) {
+        Optional<GeneralInformation> byId = generalInformationRepository.findById(id);
 
-       GeneralInformationDto generalInformationDto = mapToDtoGeneralInformation(generalInformation);
-       WellSummaryDto wellSummaryDto = mapToDtoSummary(summaryData);
-       InputsDto inputsDto = mapToDtoInputs(inputs);
-       NewWellCreationDto NewWellCreationDto = new NewWellCreationDto();
-       NewWellCreationDto.setWellSummaryDto(wellSummaryDto);
-       NewWellCreationDto.setInputsDto(inputsDto);
-       NewWellCreationDto.setGeneralInformationDto(generalInformationDto);
+        if (byId.isEmpty()) {
+            return ApiResponseData.builder()
+                    .status(HttpStatus.NOT_FOUND.value())
+                    .message("Project not found with id: " + id)
+                    .build();
+        }
 
-       return ApiResponseData.builder().status(HttpStatus.OK.value()).data(NewWellCreationDto).build();
-   }
+        GeneralInformation generalInformation = byId.get();
+
+        Inputs inputs = inputsRepository.findByGeneralInformationId(id);
+        WellSummaryData summaryData = summaryRepository.findByGeneralInformationId(id);
+
+        GeneralInformationDto generalInformationDto = mapToDtoGeneralInformation(generalInformation);
+        WellSummaryDto wellSummaryDto = (summaryData != null) ? mapToDtoSummary(summaryData) : null;
+        InputsDto inputsDto = (inputs != null) ? mapToDtoInputs(inputs) : null;
+
+        NewWellCreationDto newWellCreationDto = new NewWellCreationDto();
+        newWellCreationDto.setWellSummaryDto(wellSummaryDto);
+        newWellCreationDto.setInputsDto(inputsDto);
+        newWellCreationDto.setGeneralInformationDto(generalInformationDto);
+
+        return ApiResponseData.builder()
+                .status(HttpStatus.OK.value())
+                .data(newWellCreationDto)
+                .build();
+    }
 
 
-    public  GeneralInformationDto mapToDtoGeneralInformation(GeneralInformation generalInformation){
+    public List<CountriesList> getAllCountries() {
+       return countriesRepo.findAll();
+    }
+
+    public GeneralInformationDto mapToDtoGeneralInformation(GeneralInformation generalInformation) {
 
         GeneralInformationDto generalInformationDto = new GeneralInformationDto();
         generalInformationDto.setUser(generalInformation.getUser());
@@ -289,6 +315,7 @@ public class NewWellsProjectService {
         return wellSummaryData;
 
     }
+
     public WellSummaryDto mapToDtoSummary(WellSummaryData wellSummaryData) {
         WellSummaryDto wellSummaryDto = new WellSummaryDto();
         wellSummaryDto.setHeatCapacityRequired(wellSummaryData.getHeatCapacityRequired());

@@ -15,7 +15,6 @@ public class EstimatedCostOpexHP {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     private String operation;
     private double cost;
     private String perWell;

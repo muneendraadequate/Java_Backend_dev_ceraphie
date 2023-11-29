@@ -13,6 +13,8 @@ import javax.validation.constraints.NotNull;
 public class SummaryDto {
     private Double discountRate;
     private Double sellingPrice;
+    private Double costInflation;
+    private Double electricalPriceInflation;
     private double mediumWellCapex;
     private double mediumWellOpex;
     private double deepWellCapex;

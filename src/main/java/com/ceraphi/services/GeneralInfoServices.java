@@ -13,6 +13,7 @@ public interface GeneralInfoServices {
 //    public PageableResponse getAllTheProjects(int pageNo, int pageSize, String sortBy, String sortDir);
      GeneralInformationDto getGeneralInformationById(Long id);
     List<GeneralInformationDto>getByUserId(Long id);
+    List<GeneralInformationDto>getProjects();
       void  deleteById(Long id);
        void saveInputs(InputsDto inputsDto);
     InputsDto findLastSavedData();

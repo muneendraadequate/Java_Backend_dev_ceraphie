@@ -1,14 +1,21 @@
 package com.ceraphi.controller;
 
 import com.ceraphi.dto.NewWellCreationDto;
+import com.ceraphi.entities.CountriesList;
 import com.ceraphi.services.Impl.NewWellsProjectService;
 import com.ceraphi.utils.ApiResponseData;
+import com.ceraphi.utils.Country;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.Arrays;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api")
+@CrossOrigin("*")
 public class NewWellProjectController {
     @Autowired
     private NewWellsProjectService newWellsProjectService;
@@ -30,4 +37,11 @@ public class NewWellProjectController {
         ApiResponseData apiResponseData = newWellsProjectService.getProjectById(id);
         return ResponseEntity.ok(apiResponseData);
     }
+
+
+    @GetMapping("/getCountryCodes")
+    public List<CountriesList> getAllCountries() {
+        return newWellsProjectService.getAllCountries();
+    }
 }
+

@@ -179,7 +179,39 @@ public class GeneralInformationService implements GeneralInfoServices {
         List<GeneralInformationDto> collect = sortedData.stream().map(s -> mapToDto(s)).collect(Collectors.toList());
         return collect;
     }
+    @Override
+    public List<GeneralInformationDto> getProjects() {
+        List<GeneralInformation> allByUser = generalInformationRepository.findAll();
+        List<GeneralInformation> collect1 = allByUser.stream().filter(s -> s.getIs_deleted() == false).collect(Collectors.toList());
 
+
+        List<GeneralInformation> sortedData = collect1.stream()
+                .sorted(Comparator.comparing(GeneralInformation::getId).reversed())
+                .collect(Collectors.toList());
+        List<GeneralInformationDto> collect = sortedData.stream().map(s -> mapToDto(s)).collect(Collectors.toList());
+        return collect;
+    }
+//    @Override
+//    public List<GeneralInformationDto> getByUserId(Long id) {
+//        List<GeneralInformation> allByUser = generalInformationRepository.findAllByUser(id);
+//
+//        // Filter out deleted items
+//        List<GeneralInformation> nonDeletedList = allByUser.stream()
+//                .filter(s -> !s.getIs_deleted())
+//                .collect(Collectors.toList());
+//
+//        // Sort by ID in descending order
+//        List<GeneralInformation> sortedData = nonDeletedList.stream()
+//                .sorted(Comparator.comparing(GeneralInformation::getId).reversed())
+//                .collect(Collectors.toList());
+//
+//        // Map to DTO
+//        List<GeneralInformationDto> collect = sortedData.stream()
+//                .map(this::mapToDto)
+//                .collect(Collectors.toList());
+//
+//        return collect;
+//    }
     //    @Override
 //    public List<GeneralInformationDto> getByUserId(Long userId) {
 //        // Step 1: Fetch the list of GeneralInformation objects based on userId

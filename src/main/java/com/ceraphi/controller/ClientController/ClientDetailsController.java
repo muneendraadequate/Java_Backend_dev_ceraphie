@@ -88,7 +88,15 @@ public class ClientDetailsController {
                 .build();
         return ResponseEntity.ok(apiResponseData);
     }
-
+//    @GetMapping("/clients")
+//    public ResponseEntity<?> getClientDetails() {
+//        List<ClientDetailsDTO> clientDetails = clientDetailsService.getClientDetails();
+//        ApiResponseData<?> apiResponseData = ApiResponseData.builder()
+//                .status(HttpStatus.OK.value())
+//                .data(clientDetails)
+//                .build();
+//        return ResponseEntity.ok(apiResponseData);
+//    }
     @DeleteMapping("/{clientId}")
     public ResponseEntity<?> deleteClientDetails(@PathVariable Long clientId) {
         clientDetailsService.deleteClientDetails(clientId);
@@ -96,20 +104,20 @@ public class ClientDetailsController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/clients")
-    public ResponseEntity<Object> getAllClientsDetails(
-            @RequestParam(value = "pageNo", defaultValue = "0", required = false) int pageNo,
-            @RequestParam(value = "pageSize", defaultValue = "10", required = false) int pageSize,
-            @RequestParam(value = "sortBy", defaultValue = "id", required = false) String sortBy,
-            @RequestParam(value = "sortDir", defaultValue = "desc", required = false) String sortDir
-    ) {
-
-        ApiResponseData<?> apiResponseData = ApiResponseData.builder()
-                .status(HttpStatus.OK.value())
-                .data(clientDetailsService.allClients(pageNo, pageSize, sortBy, sortDir))
-                .build();
-        return ResponseEntity.ok(apiResponseData);
-    }
+//    @GetMapping("/clients")
+//    public ResponseEntity<Object> getAllClientsDetails(
+//            @RequestParam(value = "pageNo", defaultValue = "0", required = false) int pageNo,
+//            @RequestParam(value = "pageSize", defaultValue = "10", required = false) int pageSize,
+//            @RequestParam(value = "sortBy", defaultValue = "id", required = false) String sortBy,
+//            @RequestParam(value = "sortDir", defaultValue = "desc", required = false) String sortDir
+//    ) {
+//
+//        ApiResponseData<?> apiResponseData = ApiResponseData.builder()
+//                .status(HttpStatus.OK.value())
+//                .data(clientDetailsService.allClients(pageNo, pageSize, sortBy, sortDir))
+//                .build();
+//        return ResponseEntity.ok(apiResponseData);
+//    }
     @GetMapping("/{clientId}")
     public ResponseEntity<?> getClientDetailsById(@PathVariable Long clientId) {
         ClientDetailsDTO clientDetailsDTO = clientDetailsService.getClientDetailsById(clientId);

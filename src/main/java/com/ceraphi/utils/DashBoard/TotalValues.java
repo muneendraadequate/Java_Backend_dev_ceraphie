@@ -14,8 +14,8 @@ public class TotalValues {
     private int installed;
     private int installedHeatCapacity_MW;
     private int totalCapex;
-    private int heatWells;
-    private int  deepWells;
+    private Integer heatWells;
+    private Integer  deepWells;
     //
 //    private int totalProjects;
 //    private String installedHeatCapacity;

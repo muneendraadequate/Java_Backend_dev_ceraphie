@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class NewWellCreationDto {
     private GeneralInformationDto generalInformationDto;
+    private Integer generalInformationId;
     private InputsDto inputsDto;
     private WellSummaryDto wellSummaryDto;
 }

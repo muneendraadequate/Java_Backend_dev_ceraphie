@@ -27,8 +27,8 @@ public class DashBoard {
         int totalProjectsForUser = dashBoardService.getTotalProjectsForUser(userId);
         int totalMG = dashBoardService.calculateTotalCapacity();
         int totalCapex = dashBoardService.calculateTotalInvestment();
-        int heatWells = dashBoardService.countHeatWellsWithHeatSelected();
-        int deepWells = dashBoardService.countDeepWellsWithDeepSelected();
+        Integer heatWells = dashBoardService.countHeatWellsWithHeatSelected();
+        Integer deepWells = dashBoardService.countDeepWellsWithDeepSelected();
         TotalValues totalValues=new TotalValues(totalProjectsForUser,totalMG,totalCapex,heatWells,deepWells);
 
 

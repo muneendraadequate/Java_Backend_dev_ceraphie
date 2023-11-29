@@ -84,6 +84,15 @@ public class GeneralInformationController {
                 .build();
         return ResponseEntity.ok(apiResponseData);
     }
+    @GetMapping("/projectsList")
+    public ResponseEntity<?> getProjects() {
+        List<GeneralInformationDto> byUserId = generalInfoServices.getProjects();
+        ApiResponseData<?> apiResponseData = ApiResponseData.builder()
+                .status(HttpStatus.OK.value())
+                .data(byUserId)
+                .build();
+        return ResponseEntity.ok(apiResponseData);
+    }
     @DeleteMapping("/generalInfoDelete/{id}")
     public ResponseEntity<?> deleteTheGeneralInfo(@PathVariable Long id) {
         generalInfoServices.deleteById(id);

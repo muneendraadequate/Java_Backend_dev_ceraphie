@@ -56,10 +56,6 @@ public class DbUpdateService {
     @Autowired
     private OpexHpChangesSetRepo opexHpChangesSetRepo;
 
-
-
-
-
     @Autowired
     private GelDataWellRepo gelDataWellRepo;
     @Autowired

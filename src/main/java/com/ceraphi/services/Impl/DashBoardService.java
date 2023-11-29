@@ -192,11 +192,11 @@ public List<WellByType> getWellCountsByUserId(Long userId) {
 
 
 
-    public int countHeatWellsWithHeatSelected() {
+    public Integer countHeatWellsWithHeatSelected() {
         return summaryRepository.countHeatWellsForSelectedHeat();
     }
 
-    public int countDeepWellsWithDeepSelected() {
+    public Integer countDeepWellsWithDeepSelected() {
         return summaryRepository.countDeepWellsForSelectedDeep();
     }
 
